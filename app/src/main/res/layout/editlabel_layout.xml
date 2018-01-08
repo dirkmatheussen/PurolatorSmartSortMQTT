@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="1dp"
+    android:background="@android:color/darker_gray">
+
+    <Button
+        android:id="@+id/cancel_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/gridLayout"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="10dp"
+        android:text="Cancel" />
+
+    <Button
+        android:id="@+id/ok_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/cancel_button"
+        android:layout_alignBottom="@+id/cancel_button"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="11dp"
+        android:text="OK" />
+
+
+    <GridLayout
+            android:id="@+id/gridLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:columnCount="2"
+            android:paddingLeft="20dp"
+            android:rowCount="3">
+
+            <TextView
+                android:id="@+id/postalCodeView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Postal Code:" />
+
+        <AutoCompleteTextView
+            android:id="@+id/editPostalCode"
+            style="@style/Widget.AppCompat.EditText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:gravity="left|fill_horizontal"
+            android:imeOptions="flagNoFullscreen|actionDone"
+            android:inputType="textCapCharacters|textVisiblePassword"
+            android:maxLines="1"
+            android:paddingLeft="5dp"
+            android:textAppearance="@android:style/TextAppearance.Material.Small" />
+
+            <TextView
+                android:id="@+id/streetNameView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Street Name:" />
+
+        <ListView
+            android:id="@+id/editStreetName"
+            style="@style/Widget.AppCompat.ListView"
+            android:layout_width="820dp"
+            android:layout_height="110dp"
+            android:choiceMode="singleChoice"
+            android:ems="10"
+            android:gravity="left|fill_horizontal"
+            android:paddingLeft="5dp"
+            android:textAppearance="@android:style/TextAppearance.Material.Small" />
+
+        </GridLayout>
+</RelativeLayout>

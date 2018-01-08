@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <comment>Configuration for Purolator</comment>
+    <entry key="LICENSE_KEY"></entry>
+    <entry key="FTPPORT">449</entry>
+    <entry key="FTPURL">ftp2.purolator.com</entry>
+    <entry key="FTPUSER">Google</entry>
+    <entry key="FTPPASSWD">r9Dx(6LqgR</entry>
+    <entry key="SERIALNUMBER">office01</entry>
+
+</properties>

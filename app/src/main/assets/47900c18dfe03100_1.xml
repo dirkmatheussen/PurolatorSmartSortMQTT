@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <comment>Configuration for Purolator</comment>
+    <entry key="LICENSE_KEY"></entry>
+    <entry key="TERMINALID">511</entry>
+    <entry key="ROUTES">5BB;5LB;6VA</entry>
+    <entry key="PUDROZONE">1</entry>
+    <!-- FIXED OR GLASS are the options -->
+    <entry key="DEVICETYPE">FIXED</entry>
+    <!-- Unique name of the device, is e.g. a serial number -->
+    <entry key="DEVICENAME">511FIXED</entry>
+
+    <!-- MQTT Parameters -->
+    <entry key ="MQTTPORT">1883</entry>
+    <entry key ="MQTTURL">10.128.203.233</entry>
+
+
+    <!--e-mail the logcat entries to Evolar on termination of the application -->
+    <entry key ="SENDLOGCAT">FALSE</entry>
+
+</properties>

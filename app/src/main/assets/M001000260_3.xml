@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <comment>Configuration for Purolator</comment>
+    <entry key="LICENSE_KEY"></entry>
+    <entry key="TERMINALID">511</entry>
+    <entry key="ROUTES">WHD;WHA;WHB;SQA;GTB;9WA;5HA;6WB</entry>
+    <entry key="PUDROZONE">1</entry>
+    <!-- FIXED OR GLASS are the options -->
+    <entry key="DEVICETYPE">GLASS</entry>
+    <!-- Unique name of the device, is e.g. a serial number -->
+    <entry key="DEVICENAME">M001000260</entry>
+
+    <!-- MQTT Parameters -->
+    <entry key ="MQTTPORT">1883</entry>
+    <entry key ="MQTTURL">iot.eclipse.org</entry>
+
+    <!-- Parameters for distance measurement -->
+    <!-- Distance between fixed scanner & smartglass in cm !-->
+    <entry key ="DISTANCE">200</entry>
+    <!-- ETA in seconds when label is displayed in green -->
+    <entry key ="DISTANCE_GREEN">10</entry>
+    <!-- ETA in seconds when label is displayed in red -->
+    <entry key ="DISTANCE_RED">0</entry>
+
+</properties>

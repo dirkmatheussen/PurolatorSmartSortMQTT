@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/splash"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@drawable/splash_gradient"
+    android:orientation="vertical" >
+
+    <ImageView
+        android:id="@+id/flashView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:src="@drawable/logo_purolator" />
+
+    <TextView
+        android:id="@+id/splashView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:layout_marginBottom="100dp"
+        android:layout_toRightOf="@+id/flashView"
+        android:text="Press first button"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textColor="@color/darkblue"
+        android:layout_centerInParent="true" />
+    <TextView
+        android:id="@+id/serialView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:text="Serial: "
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textColor="@color/darkblue"
+        android:layout_alignParentBottom="false"
+        android:layout_alignParentRight="true" />
+        
+</RelativeLayout>

@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Purolator SmartSort</string>
+    <string name="welcome1">Hallo, welcome at the\n</string>
+    <string name="welcome2">smartsort</string>
+    <string name="pressbtn">\nPress the first button</string>
+    <string name="instruction"> </string>
+    <string name="errorfile">Problems reading the config file</string>
+    <string name="fetchdata">Press Button to continue....</string>
+    <string name="packagedrop">Package dropped in:</string>
+    <string name="datasync">Sync data from server...</string>
+    <string name="fileload">file is loaded, load next file...</string>
+    <string name="fileloadfail"> file failed to load, load next file...</string>
+    <string name="appnotready">Wait till databases are loaded</string>
+</resources>
