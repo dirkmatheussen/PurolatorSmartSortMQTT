@@ -193,8 +193,8 @@ public class LookupFixedBarcodePRE {
                 uiUpdater.setPinCode(pincode + " " + (Utilities.getPostalCode(barcode) == null? " ":Utilities.getPostalCode(barcode)));
                 uiUpdater.setScannedCode(barcode);
                 uiUpdater.setPostalCode(Utilities.getPostalCode(barcode));
-
                 uiUpdater.setCorrectBay(false);
+
                 EventBus.getDefault().post(uiUpdater);
 
 

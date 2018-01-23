@@ -16,6 +16,7 @@ import android.os.Environment;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 
+import com.bugfender.sdk.Bugfender;
 import com.google.gson.Gson;
 
 import org.greenrobot.eventbus.EventBus;
@@ -210,7 +211,12 @@ public class PurolatorSmartsortMQTT extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-
+/*
+        Bugfender.init(this, "q1OsrXouEUapiYQR2vmoABKfIfEgch2f", BuildConfig.DEBUG);
+        Bugfender.enableLogcatLogging();
+        Bugfender.enableUIEventLogging(this);
+        Bugfender.enableCrashReporting();
+*/
         sInstance = this;
         EventBus.getDefault().register(this);
 
@@ -1127,7 +1133,6 @@ public class PurolatorSmartsortMQTT extends Application {
         glassFixedScanresult.setDeliverySequence((fixedScanResult.getDeliverySequence()));
         glassFixedScanresult.setDimensionData(fixedScanResult.getDimensionData());
         glassFixedScanresult.setMissort(fixedScanResult.isMissort());
-        glassFixedScanresult.setMunicipality(fixedScanResult.getMunicipality());
         glassFixedScanresult.setPrimarySort(fixedScanResult.getPrimarySort());
         glassFixedScanresult.setRouteNumber(fixedScanResult.getRouteNumber());
         glassFixedScanresult.setScanDate(fixedScanResult.getScanDate());
@@ -1135,10 +1140,12 @@ public class PurolatorSmartsortMQTT extends Application {
         glassFixedScanresult.setSenderType(fixedScanResult.getSenderType());
         glassFixedScanresult.setShelfNumber(fixedScanResult.getShelfNumber());
         glassFixedScanresult.setShelfOverride(fixedScanResult.getShelfOverride());
+        glassFixedScanresult.setAddressee(fixedScanResult.getAddressee());
         glassFixedScanresult.setStreetname(fixedScanResult.getStreetname());
         glassFixedScanresult.setStreetnumber(fixedScanResult.getStreetnumber());
+        glassFixedScanresult.setStreetunit(fixedScanResult.getStreetunit());
+        glassFixedScanresult.setMunicipality(fixedScanResult.getMunicipality());
         glassFixedScanresult.setSideofBelt(fixedScanResult.getSideofBelt());
-
 
 
         if (D) Log.d(TAG, "Also send to Glass");
@@ -1270,7 +1277,7 @@ public class PurolatorSmartsortMQTT extends Application {
         try {
             PurolatorSmartsortMQTT.getsInstance().setTransactionActive(PurolatorSmartsortMQTT.RPM_DBTYPE, true);
 
-            String[] selectColumns = {"PostalCode", "StreetName","StreetType","AddressRecordType","FromStreetNumber","ToStreetNumber","RouteNumber"};
+            String[] selectColumns = {"PostalCode", "StreetName","StreetType","AddressRecordType","FromStreetNumber","ToStreetNumber","FromUnitNumber","ToUnitNumber","MunicipalityName","RouteNumber"};
             Cursor RPMCursor = database.query("RoutePlan", selectColumns, "PostalCode=? ", new String[]{postalCode}, null, null, null, null);
 
             ArrayList<RPMLookUp> rpmLookUps = new ArrayList<RPMLookUp>();
@@ -1288,13 +1295,23 @@ public class PurolatorSmartsortMQTT extends Application {
                         rpmLookUp.setStreetType(RPMCursor.getString(RPMCursor.getColumnIndex("StreetType")));
                         rpmLookUp.setFromNumber(RPMCursor.getInt(RPMCursor.getColumnIndex("FromStreetNumber")));
                         rpmLookUp.setToNumber(RPMCursor.getInt(RPMCursor.getColumnIndex("ToStreetNumber")));
+                        if (rpmLookUp.getToNumber()==0) rpmLookUp.setToNumber(rpmLookUp.getFromNumber());
+                        rpmLookUp.setFromUnitNumber(RPMCursor.getString(RPMCursor.getColumnIndex("FromUnitNumber")));
+                        rpmLookUp.setToUnitNumber(RPMCursor.getString(RPMCursor.getColumnIndex("ToUnitNumber")));
+                        rpmLookUp.setMunicipality(RPMCursor.getString(RPMCursor.getColumnIndex("MunicipalityName")));
                         rpmLookUp.setRouteNumber(RPMCursor.getString(RPMCursor.getColumnIndex("RouteNumber")));
-
+                        rpmLookUp.setUniqueStreet(false);
+                        if (addressRecordType.startsWith("Unique")) {
+                            rpmLookUp.setUniqueStreet(true);
+                        }
                         rpmLookUps.add(rpmLookUp);
                     }
 
 
                 } while (RPMCursor.moveToNext());
+            }
+            if (rpmLookUps.size() == 1 && (rpmLookUps.get(0).getFromNumber() == rpmLookUps.get(0).getToNumber())){
+                rpmLookUps.get(0).setUniqueStreet(true);
             }
 
             if (rpmLookUps.size() > 0){

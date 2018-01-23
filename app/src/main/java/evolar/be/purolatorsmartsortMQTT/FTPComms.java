@@ -253,6 +253,8 @@ public class FTPComms {
 
             line = line.replaceAll("null","");
 
+
+            if (D) Log.i(TAG,"Write to log: " + line);
             buffer = line.getBytes(Charset.forName("UTF-8"));
 
 

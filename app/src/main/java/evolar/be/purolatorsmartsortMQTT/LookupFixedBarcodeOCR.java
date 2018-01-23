@@ -21,7 +21,7 @@ import evolar.be.purolatorsmartsortMQTT.events.UIUpdater;
 
 /**
  * Created by Dirk on 17/03/16.
- * Do a lookup in the PIN File
+ * Do a lookup of the OCR'erd parcels, coming from remediation
  *
  */
 public class LookupFixedBarcodeOCR {
@@ -82,7 +82,7 @@ public class LookupFixedBarcodeOCR {
         for (OCRData ocrData:PurolatorSmartsortMQTT.getsInstance().ocrDatas){
 
             if (ocrData.getLookupBarcode().equals(pincode)){
-                if(D) Log.d(TAG,"PinCode in pinFound: " + pincode);
+                if(D) Log.d(TAG,"PinCode in OCRFound: " + pincode);
 
                 if (RPM2DFound(ocrData.getOcrResult(),ocrData.getScannedBarcode(), scanDate)){
                     PurolatorSmartsortMQTT.getsInstance().ocrDatas.remove(ocrData);
@@ -114,6 +114,7 @@ public class LookupFixedBarcodeOCR {
 
         String[] parsed = barcode.split("[|]");
         String streetNo = "-1";
+        String unit = "-1";
         String address = "";
         String municipality =  "";
         String postalCode = "";
@@ -129,7 +130,7 @@ public class LookupFixedBarcodeOCR {
                 //TODO Check is address is filled in correctly in 2D Code R02/R03
                 switch (valuePair[0].toUpperCase()) {
                     case "R02":
-
+                        unit = valuePair[1].toUpperCase();
                         break;
                     case "R03":             //street n#
                         streetNo = valuePair[1];
@@ -147,7 +148,7 @@ public class LookupFixedBarcodeOCR {
                     case "R07":             //postal code
                         postalCode = valuePair[1].toUpperCase();
                         break;
-                    case "R016":
+                    case "S16":
                         routeNumber = valuePair[1].toUpperCase();
                         break;
                 }
@@ -155,7 +156,7 @@ public class LookupFixedBarcodeOCR {
         }
 
         if (routeNumber.length() > 1){
-            if(D) Log.d(TAG,"Found in OCR, ROutenumber from multiple routes");
+            if(D) Log.d(TAG,"Found in OCR, ROutenumber ");
 
             if (PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceType().equals("FIXED")) {
 
@@ -171,6 +172,11 @@ public class LookupFixedBarcodeOCR {
                 fixedScanResult.setScanDate(scanDate);
                 fixedScanResult.setGlassTarget("WAVE");
                 fixedScanResult.setDimensionData("");
+                fixedScanResult.setStreetname(address);  //Streettype is included
+                fixedScanResult.setStreetnumber(streetNo);
+                fixedScanResult.setMunicipality(municipality);
+                fixedScanResult.setStreetunit(unit);
+                fixedScanResult.setShelfNumber("");
 
                 EventBus.getDefault().post(fixedScanResult);
 
@@ -202,7 +208,7 @@ public class LookupFixedBarcodeOCR {
 
                 logger.setRouteNumber(routeNumber);
                 logger.setPostalCode(Utilities.getPostalCode(barcode));
-                logger.setBarcodeType("OCR-MultipleROutes");
+                logger.setBarcodeType("OCR-Route");
 
                 if (Utilities.getBarcodeLogType(barcode).equals("2D")) {
                     parsed = barcode.split("[|]");
@@ -215,6 +221,9 @@ public class LookupFixedBarcodeOCR {
                             switch (valuePair[0].toUpperCase()) {
                                 case "RO1":
                                     logger.setCustomerName(valuePair[1]);
+                                    break;
+                                case "R02":
+                                    logger.setUnitNumber(valuePair[1]);
 
                                 case "R03":             //street n#
                                     logger.setStreetNumber(valuePair[1]);
@@ -263,7 +272,7 @@ public class LookupFixedBarcodeOCR {
             }
             return true;
         }
-
+    //TODO CHECK IF THIS IS NEEDED
         //do additional parsing
 
         String[] selectColumns = {"RouteNumber", "ShelfNumber","MunicipalityName","AddressRecordType","TruckShelfOverride","DeliverySequenceID"};
@@ -405,6 +414,8 @@ public class LookupFixedBarcodeOCR {
                                     switch (valuePair[0].toUpperCase()) {
                                         case "RO1":
                                             logger.setCustomerName(valuePair[1]);
+                                        case "R02":
+                                            logger.setUnitNumber(valuePair[1]);
 
                                         case "R03":             //street n#
                                             logger.setStreetNumber(valuePair[1]);
@@ -539,7 +550,8 @@ public class LookupFixedBarcodeOCR {
                                     switch (valuePair[0].toUpperCase()) {
                                         case "RO1":
                                             logger.setCustomerName(valuePair[1]);
-
+                                        case "R02":
+                                            logger.setUnitNumber(valuePair[1]);
                                         case "R03":             //street n#
                                             logger.setStreetNumber(valuePair[1]);
                                             break;

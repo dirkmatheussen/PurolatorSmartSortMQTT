@@ -92,7 +92,7 @@ public class LookupFixedBarcodeRPM {
             return false;
         }
 
-        String[] selectColumns = {"RouteNumber", "ShelfNumber","MunicipalityName","AddressRecordType","TruckShelfOverride","DeliverySequenceID"};
+        String[] selectColumns = {"RouteNumber", "ShelfNumber","CustomerName","StreetName","StreetType","FromStreetNumber","ToStreetNumber","FromUnitNumber","ToUnitNumber","MunicipalityName","AddressRecordType","TruckShelfOverride","DeliverySequenceID"};
         String pincode = Utilities.getPINCode(barcode);
 
         SQLiteDatabase database = PurolatorSmartsortMQTT.getsInstance().getDatabase(PurolatorSmartsortMQTT.RPM_DBTYPE);
@@ -163,6 +163,21 @@ public class LookupFixedBarcodeRPM {
                             readablePincode = pincode.substring(pincode.length() - 4);
 
                         fixedScanResult.setPinCode(readablePincode + " " + postalCode);
+
+                        String municipality = RPMCursor.getString(RPMCursor.getColumnIndex("MunicipalityName"));
+                        String address = RPMCursor.getString(RPMCursor.getColumnIndex("StreetName"));
+                        String fromStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber"));
+                        String toStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("ToStreetNumber"));
+
+                        if (fromStreetNo.equals(toStreetNo)) fixedScanResult.setStreetnumber(RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber")));
+
+                        fixedScanResult.setStreetname(address);
+                        fixedScanResult.setMunicipality(municipality);
+
+                        if (RPMCursor.getString(RPMCursor.getColumnIndex("ToUnitNumber")).isEmpty())
+                            fixedScanResult.setStreetunit(RPMCursor.getString(RPMCursor.getColumnIndex("FromUnitNumber")));
+
+
                         fixedScanResult.setScanDate(scanDate);
                         fixedScanResult.setGlassTarget("WAVE");
                         fixedScanResult.setDimensionData(dimensionData);
@@ -258,6 +273,22 @@ public class LookupFixedBarcodeRPM {
                             readablePincode = pincode.substring(pincode.length() - 4);
 
                         fixedScanResult.setPinCode(readablePincode + " " + postalCode);
+
+                        String municipality = RPMCursor.getString(RPMCursor.getColumnIndex("MunicipalityName"));
+                        String address = RPMCursor.getString(RPMCursor.getColumnIndex("StreetName"));
+                        String fromStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber"));
+                        String toStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("ToStreetNumber"));
+
+                        if (fromStreetNo.equals(toStreetNo)) fixedScanResult.setStreetnumber(RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber")));
+
+
+                        fixedScanResult.setStreetname(address);
+                        fixedScanResult.setMunicipality(municipality);
+
+                        if (RPMCursor.getString(RPMCursor.getColumnIndex("ToUnitNumber")).isEmpty())
+                            fixedScanResult.setStreetunit(RPMCursor.getString(RPMCursor.getColumnIndex("FromUnitNumber")));
+
+
                         fixedScanResult.setScanDate(scanDate);
                         fixedScanResult.setGlassTarget("WAVE");
                         fixedScanResult.setDimensionData(dimensionData);
@@ -395,7 +426,8 @@ public class LookupFixedBarcodeRPM {
 
         //do additional parsing
 
-        String[] selectColumns = {"RouteNumber", "ShelfNumber","MunicipalityName","AddressRecordType","TruckShelfOverride","DeliverySequenceID"};
+ //       String[] selectColumns = {"RouteNumber", "ShelfNumber","MunicipalityName","AddressRecordType","TruckShelfOverride","DeliverySequenceID"};
+        String[] selectColumns = {"RouteNumber", "ShelfNumber","CustomerName","StreetName","StreetType","FromStreetNumber","ToStreetNumber","FromUnitNumber","ToUnitNumber","MunicipalityName","AddressRecordType","TruckShelfOverride","DeliverySequenceID"};
 
         SQLiteDatabase database = PurolatorSmartsortMQTT.getsInstance().getDatabase(PurolatorSmartsortMQTT.RPM_DBTYPE);
 
@@ -462,8 +494,87 @@ public class LookupFixedBarcodeRPM {
                     if (D) Log.d(TAG, "Found in RPM, with UniqueAdress!");
                     if (PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceType().equals("FIXED")) {
 
-
+                        Logger logger = new Logger();
                         final FixedScanResult fixedScanResult = new FixedScanResult();
+
+                        municipality = RPMCursor.getString(RPMCursor.getColumnIndex("MunicipalityName"));
+                        address = RPMCursor.getString(RPMCursor.getColumnIndex("StreetName"));
+                        String fromStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber"));
+                        String toStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("ToStreetNumber"));
+
+                        if (fromStreetNo.equals(toStreetNo)) fixedScanResult.setStreetnumber(RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber")));
+                        fixedScanResult.setStreetname(address);
+                        if (RPMCursor.getString(RPMCursor.getColumnIndex("ToStreetNumber")).isEmpty())
+                            fixedScanResult.setStreetnumber(RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber")));
+                        fixedScanResult.setMunicipality(municipality);
+                        if (RPMCursor.getString(RPMCursor.getColumnIndex("ToUnitNumber")).isEmpty())
+                            fixedScanResult.setStreetunit(RPMCursor.getString(RPMCursor.getColumnIndex("FromUnitNumber")));
+
+
+
+                        if (Utilities.getBarcodeLogType(barcode).equals("2D")){
+
+                            //check if there is a \ and replace by |
+                            barcode = barcode.replace("\\","|");
+
+                            parsed = barcode.split("[|]");
+                            for (String aParsed : parsed) {
+                                String[] valuePair = aParsed.split("[~]");
+
+                                if (valuePair.length >= 2) {
+
+
+                                    switch (valuePair[0].toUpperCase()) {
+                                        case "RO1":
+                                            logger.setCustomerName(valuePair[1]);
+                                            fixedScanResult.setAddressee(valuePair[1]);
+
+                                        case "R03":             //street n#
+                                            logger.setStreetNumber(valuePair[1]);
+                                            fixedScanResult.setStreetnumber(valuePair[1]);
+                                            break;
+                                        case "R04":             //address
+                                            parsedAddress = Utilities.parseAddress(valuePair[1]);
+                                            logger.setStreetName(parsedAddress[1]);
+                                            logger.setStreetType(parsedAddress[2]);
+                                            fixedScanResult.setStreetname(parsedAddress[1]);
+                                            fixedScanResult.setStreetunit(parsedAddress[2]);
+
+
+                                            break;
+                                        case "R05":             //address
+
+                                            break;
+                                        case "R06":             //municipality
+                                            logger.setMunicipalityName(valuePair[1]);
+                                            fixedScanResult.setMunicipality(valuePair[1]);
+                                            break;
+                                        case "R07":             //postal code
+                                            logger.setPostalCode(valuePair[1]);
+                                            fixedScanResult.setPostalCode(valuePair[1]);
+                                            break;
+                                        case "S04":
+                                            logger.setDeliveryTime(valuePair[1]);
+                                            break;
+                                        case "S05":
+                                            logger.setShipmentType(valuePair[1]);
+                                            break;
+                                        case "S06":
+                                            logger.setDeliveryType(valuePair[1]);
+                                            break;
+                                        case "S07":
+                                            logger.setDiversionCode(valuePair[1]);
+                                            break;
+                                        case "S15":
+                                            logger.setHandlingClassType(valuePair[1]);
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+
+
+
                         fixedScanResult.setRouteNumber(RPMCursor.getString(RPMCursor.getColumnIndex("RouteNumber")));
                         String shelfNumber = RPMCursor.getString(RPMCursor.getColumnIndex("TruckShelfOverride"));
                         if (shelfNumber == null || shelfNumber.isEmpty()) {
@@ -502,7 +613,6 @@ public class LookupFixedBarcodeRPM {
                         EventBus.getDefault().post(uiUpdater);
 
 
-                        Logger logger = new Logger();
                         logger.setDevice_id(PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceName());
                         logger.setUserCode(PurolatorSmartsortMQTT.getsInstance().getConfigData().getUserId());
                         logger.setTerminalID(PurolatorSmartsortMQTT.getsInstance().getConfigData().getTerminalID());
@@ -514,57 +624,6 @@ public class LookupFixedBarcodeRPM {
                         logger.setDeliverySequence(RPMCursor.getString(RPMCursor.getColumnIndex("DeliverySequenceID")));
                         logger.setPostalCode(Utilities.getPostalCode(barcode));
 
-                        if (Utilities.getBarcodeLogType(barcode).equals("2D")) {
-                            parsed = barcode.split("[|]");
-                            for (String aParsed : parsed) {
-                                String[] valuePair = aParsed.split("[~]");
-
-                                if (valuePair.length >= 2) {
-
-
-                                    switch (valuePair[0].toUpperCase()) {
-                                        case "RO1":
-                                            logger.setCustomerName(valuePair[1]);
-
-                                        case "R03":             //street n#
-                                            logger.setStreetNumber(valuePair[1]);
-                                            break;
-                                        case "R04":             //address
-                                            parsedAddress = Utilities.parseAddress(valuePair[1]);
-                                            logger.setStreetName(parsedAddress[1]);
-                                            logger.setStreetType(parsedAddress[2]);
-                                            break;
-                                        case "R05":             //address
-
-                                            break;
-                                        case "R06":             //municipality
-                                            logger.setMunicipalityName(valuePair[1]);
-                                            break;
-                                        case "R07":             //postal code
-                                            logger.setPostalCode(valuePair[1]);
-                                            break;
-                                        case "S02":
-                                            logger.setPinCode(valuePair[1]);
-                                            break;
-                                        case "S04":
-                                            logger.setDeliveryTime(valuePair[1]);
-                                            break;
-                                        case "S05":
-                                            logger.setShipmentType(valuePair[1]);
-                                            break;
-                                        case "S06":
-                                            logger.setDeliveryType(valuePair[1]);
-                                            break;
-                                        case "S07":
-                                            logger.setDiversionCode(valuePair[1]);
-                                            break;
-                                        case "S15":
-                                            logger.setHandlingClassType(valuePair[1]);
-                                            break;
-                                    }
-                                }
-                            }
-                        }
                         EventBus.getDefault().post(logger);
                     } else if (PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceType().equals("GLASS")) {
                         uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);
@@ -608,8 +667,84 @@ public class LookupFixedBarcodeRPM {
                         if (D) Log.d(TAG, "Found in RPM, With AddressRange");
                         if (PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceType().equals("FIXED")) {
 
-
+                            Logger logger = new Logger();
                             final FixedScanResult fixedScanResult = new FixedScanResult();
+                            municipality = RPMCursor.getString(RPMCursor.getColumnIndex("MunicipalityName"));
+                            address = RPMCursor.getString(RPMCursor.getColumnIndex("StreetName"));
+                            String fromStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber"));
+                            String toStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("ToStreetNumber"));
+
+                            if (fromStreetNo.equals(toStreetNo)) fixedScanResult.setStreetnumber(RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber")));
+
+                            fixedScanResult.setStreetname(address);
+                            if (RPMCursor.getString(RPMCursor.getColumnIndex("ToStreetNumber")).isEmpty())
+                                fixedScanResult.setStreetnumber(RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber")));
+                            fixedScanResult.setMunicipality(municipality);
+                            if (RPMCursor.getString(RPMCursor.getColumnIndex("ToUnitNumber")).isEmpty())
+                                fixedScanResult.setStreetunit(RPMCursor.getString(RPMCursor.getColumnIndex("FromUnitNumber")));
+
+
+
+                            if (Utilities.getBarcodeLogType(barcode).equals("2D")){
+
+                                //check if there is a \ and replace by |
+                                barcode = barcode.replace("\\","|");
+
+                                parsed = barcode.split("[|]");
+                                for (String aParsed : parsed) {
+                                    String[] valuePair = aParsed.split("[~]");
+
+                                    if (valuePair.length >= 2) {
+
+
+                                        switch (valuePair[0].toUpperCase()) {
+                                            case "RO1":
+                                                logger.setCustomerName(valuePair[1]);
+                                                fixedScanResult.setAddressee(valuePair[1]);
+
+                                            case "R03":             //street n#
+                                                logger.setStreetNumber(valuePair[1]);
+                                                fixedScanResult.setStreetnumber(valuePair[1]);
+                                                break;
+                                            case "R04":             //address
+                                                parsedAddress = Utilities.parseAddress(valuePair[1]);
+                                                logger.setStreetName(parsedAddress[1]);
+                                                logger.setStreetType(parsedAddress[2]);
+                                                fixedScanResult.setStreetname(parsedAddress[1]);
+                                                fixedScanResult.setStreetunit(parsedAddress[2]);
+
+
+                                                break;
+                                            case "R05":             //address
+
+                                                break;
+                                            case "R06":             //municipality
+                                                logger.setMunicipalityName(valuePair[1]);
+                                                fixedScanResult.setMunicipality(valuePair[1]);
+                                                break;
+                                            case "R07":             //postal code
+                                                logger.setPostalCode(valuePair[1]);
+                                                fixedScanResult.setPostalCode(valuePair[1]);
+                                                break;
+                                            case "S04":
+                                                logger.setDeliveryTime(valuePair[1]);
+                                                break;
+                                            case "S05":
+                                                logger.setShipmentType(valuePair[1]);
+                                                break;
+                                            case "S06":
+                                                logger.setDeliveryType(valuePair[1]);
+                                                break;
+                                            case "S07":
+                                                logger.setDiversionCode(valuePair[1]);
+                                                break;
+                                            case "S15":
+                                                logger.setHandlingClassType(valuePair[1]);
+                                                break;
+                                        }
+                                    }
+                                }
+                            }
                             fixedScanResult.setRouteNumber(RPMCursor.getString(RPMCursor.getColumnIndex("RouteNumber")));
                             String shelfNumber = RPMCursor.getString(RPMCursor.getColumnIndex("TruckShelfOverride"));
                             if (shelfNumber.isEmpty()) {
@@ -648,7 +783,6 @@ public class LookupFixedBarcodeRPM {
                             EventBus.getDefault().post(uiUpdater);
 
 
-                            Logger logger = new Logger();
                             logger.setDevice_id(PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceName());
                             logger.setUserCode(PurolatorSmartsortMQTT.getsInstance().getConfigData().getUserId());
                             logger.setTerminalID(PurolatorSmartsortMQTT.getsInstance().getConfigData().getTerminalID());
@@ -659,54 +793,7 @@ public class LookupFixedBarcodeRPM {
                             logger.setShelfNumber(RPMCursor.getString(RPMCursor.getColumnIndex("ShelfNumber")));
                             logger.setDeliverySequence(RPMCursor.getString(RPMCursor.getColumnIndex("DeliverySequenceID")));
 
-                            if (Utilities.getBarcodeLogType(barcode).equals("2D")) {
-                                parsed = barcode.split("[|]");
-                                for (String aParsed : parsed) {
-                                    String[] valuePair = aParsed.split("[~]");
-                                    if (valuePair.length >= 2) {
-                                        switch (valuePair[0].toUpperCase()) {
-                                            case "RO1":
-                                                logger.setCustomerName(valuePair[1]);
 
-                                            case "R03":             //street n#
-                                                logger.setStreetNumber(valuePair[1]);
-                                                break;
-                                            case "R04":             //address
-                                                parsedAddress = Utilities.parseAddress(valuePair[1]);
-                                                logger.setStreetName(parsedAddress[1]);
-                                                logger.setStreetType(parsedAddress[2]);
-                                                break;
-                                            case "R05":             //address
-
-                                                break;
-                                            case "R06":             //municipality
-                                                logger.setMunicipalityName(valuePair[1]);
-                                                break;
-                                            case "R07":             //postal code
-                                                logger.setPostalCode(valuePair[1]);
-                                                break;
-                                            case "S02":
-                                                logger.setPinCode(valuePair[1]);
-                                                break;
-                                            case "S04":
-                                                logger.setDeliveryTime(valuePair[1]);
-                                                break;
-                                            case "S05":
-                                                logger.setShipmentType(valuePair[1]);
-                                                break;
-                                            case "S06":
-                                                logger.setDeliveryType(valuePair[1]);
-                                                break;
-                                            case "S07":
-                                                logger.setDiversionCode(valuePair[1]);
-                                                break;
-                                            case "S15":
-                                                logger.setHandlingClassType(valuePair[1]);
-                                                break;
-                                        }
-                                    }
-                                }
-                            }
                             EventBus.getDefault().post(logger);
                         } else if (PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceType().equals("GLASS")) {
                             uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);

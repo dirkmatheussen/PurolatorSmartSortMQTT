@@ -29,6 +29,12 @@ public class UIUpdater {
     private String errorMessage;
     private int severityCode;
 
+    private String addressee;
+    private String municipality;
+    private String streetname;
+    private String streetnumber;
+    private String streetunit;
+
     //
     private boolean correctBay;              //package scanned by Operator is in correct bay or not
 
@@ -158,4 +164,45 @@ public class UIUpdater {
     public void setCorrectBay(boolean correctBay) {
         this.correctBay = correctBay;
     }
+
+    public String getAddressee() {
+        return addressee;
+    }
+
+    public String getStreetunit() {
+        return streetunit;
+    }
+
+    public void setStreetunit(String streetunit) {
+        this.streetunit = streetunit;
+    }
+
+    public void setAddressee(String addressee) {
+        this.addressee = addressee;
+    }
+
+    public String getMunicipality() {
+        return municipality;
+    }
+
+    public void setMunicipality(String municipality) {
+        this.municipality = municipality;
+    }
+
+    public String getStreetname() {
+        return streetname;
+    }
+
+    public void setStreetname(String streetname) {
+        this.streetname = streetname;
+    }
+
+    public String getStreetnumber() {
+        return streetnumber;
+    }
+
+    public void setStreetnumber(String streetnumber) {
+        this.streetnumber = streetnumber;
+    }
+
 }

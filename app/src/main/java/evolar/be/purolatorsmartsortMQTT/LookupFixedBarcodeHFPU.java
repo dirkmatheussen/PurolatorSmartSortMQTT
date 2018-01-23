@@ -226,6 +226,10 @@ public class LookupFixedBarcodeHFPU {
 
                         fixedScanResult.setPostalCode(postalCode);
                         fixedScanResult.setScannedCode(barcode);
+                        fixedScanResult.setStreetname(address);
+                        fixedScanResult.setStreetunit(streetType);
+                        fixedScanResult.setStreetnumber(streetNo);
+
                         if (municipality.isEmpty())
                             municipality = RPMCursor.getString(RPMCursor.getColumnIndex("MunicipalityName"));
                         fixedScanResult.setPinCode(address + " " + streetNo + " " + postalCode + " " + municipality);
@@ -262,7 +266,7 @@ public class LookupFixedBarcodeHFPU {
 
                         logger.setShelfOverride(RPMCursor.getString(RPMCursor.getColumnIndex("TruckShelfOverride")));
 //TODO New Change                    logger.setRouteNumber(RPMCursor.getString(RPMCursor.getColumnIndex("RouteNumber")));
-                        logger.setRouteNumber("HFU");
+                        logger.setRouteNumber("HFP");
                         logger.setShelfNumber(RPMCursor.getString(RPMCursor.getColumnIndex("ShelfNumber")));
                         logger.setDeliverySequence(RPMCursor.getString(RPMCursor.getColumnIndex("DeliverySequenceID")));
                         logger.setRoutePlanVersionId(RPMCursor.getString(RPMCursor.getColumnIndex("RoutePlanVersionID")));

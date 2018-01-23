@@ -33,10 +33,10 @@ public class HandleRingBarcode {
     @Subscribe(priority = 0)    //default priority
     public void onRingBarcodeScanEvent(RingBarcodeScan event){
 
-        if (D) Log.d(TAG,"In event ");
+        if (D) Log.i(TAG,"In event, barcode: " + event.getBarcodeResult());
 
         //check if it is a clear barcode
-        if (event.getBarcodeResult().equals("CLEAR")) {
+        if (event.getBarcodeResult().startsWith("CLEAR")) {
 
             //clear shelf information
             UIUpdater uiUpdater;
@@ -54,11 +54,27 @@ public class HandleRingBarcode {
         if (Utilities.isShelfScan(event.getBarcodeResult())) {
             UIUpdater uiUpdater;
 
+            if (PurolatorSmartsortMQTT.getsInstance().getPackageInShelf()!=null && PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getShelfNumber().isEmpty()){
+                if(D) Log.d(TAG,"no schelf number in database, acceept as correct");
+                uiUpdater = new UIUpdater();
+                uiUpdater.setErrorMessage(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getRouteNumber()+" Shelf: " + event.getBarcodeResult()+" ");           //show the scanned package information
+                uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);
+                uiUpdater.setScannedCode("SHELF");
+                uiUpdater.setShelfNumber(event.getBarcodeResult());
+                //empty the screen & remove from PackageInShelf
+                EventBus.getDefault().post(uiUpdater);
+                return;
+
+            }
+
+
             if (PurolatorSmartsortMQTT.getsInstance().getPackageInShelf() != null && PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getShelfNumber().equals(event.getBarcodeResult())) {
                 if(D) Log.d(TAG,"Correct shelf scanned");
                 uiUpdater = new UIUpdater();
                 uiUpdater.setErrorMessage(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getRouteNumber()+" Shelf: " + PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getShelfNumber()+" ");            //show the scanned package information
                 uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);
+                uiUpdater.setScannedCode("SHELF");
+                uiUpdater.setShelfNumber(event.getBarcodeResult());
                 //empty the screen & remove from PackageInShelf
                 EventBus.getDefault().post(uiUpdater);
                 return;
@@ -72,6 +88,8 @@ public class HandleRingBarcode {
                 uiUpdater = new UIUpdater();
                 uiUpdater.setErrorMessage(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getRouteNumber()+" Shelf: " + event.getBarcodeResult()+" ");            //show the scanned package information
                 uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);
+                uiUpdater.setScannedCode("SHELF");
+                uiUpdater.setShelfNumber(event.getBarcodeResult());
                 //empty the screen & remove from PackageInShelf
                 EventBus.getDefault().post(uiUpdater);
                 return;
@@ -112,7 +130,7 @@ public class HandleRingBarcode {
                 UIUpdater uiUpdater;
 
 
-                if (PurolatorSmartsortMQTT.getsInstance().getPackageInShelf()!=null) {
+                if (PurolatorSmartsortMQTT.getsInstance().getPackageInShelf()!=null && PurolatorSmartsortMQTT.getsInstance().getConfigData().isShelfValidation()) {
 
                     // current package is not yet dropped --> put it back on the list en then put new scanned package on the shelf line
 
@@ -165,6 +183,9 @@ public class HandleRingBarcode {
                 uiUpdater.setScannedCode(event.getBarcodeResult());
 
                 PurolatorSmartsortMQTT.packagesList.getBarcodeScans().remove(barcodeResult);
+
+                //TODO: a check is needed to see if additional street information is needed
+
 
 
                 EventBus.getDefault().post(uiUpdater);

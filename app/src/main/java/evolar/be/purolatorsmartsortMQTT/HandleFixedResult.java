@@ -50,6 +50,11 @@ public class HandleFixedResult {
         uiUpdater.setPostalCode(event.getPostalCode());
         uiUpdater.setScannedCode(event.getScannedCode());
         uiUpdater.setScanDate(event.getScanDate());
+        uiUpdater.setAddressee(event.getAddressee());
+        uiUpdater.setStreetname(event.getStreetname());
+        uiUpdater.setStreetnumber(event.getStreetnumber());
+        uiUpdater.setStreetunit(event.getStreetunit());
+        uiUpdater.setMunicipality(event.getMunicipality());
 
 
         //check if it is a 2D Scan or an NGB Scan, use the PIN code as BarcodeScan.  --> this logic is also applied in HandleRingBarcode

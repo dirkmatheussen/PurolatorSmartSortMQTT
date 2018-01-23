@@ -136,9 +136,16 @@ public class LookupFixedBarcodeHVR {
                 fixedScanResult.setDeliverySequence(RPMCursor.getString(RPMCursor.getColumnIndex("DeliverySequenceID")));
                 fixedScanResult.setPostalCode(postalCode);
                 fixedScanResult.setScannedCode(barcode);
+
                 String municipality = RPMCursor.getString(RPMCursor.getColumnIndex("MunicipalityName"));
                 String address = RPMCursor.getString(RPMCursor.getColumnIndex("StreetName"));
                 String streetNo = RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber")) + "-" + RPMCursor.getString(RPMCursor.getColumnIndex("ToStreetNumber"));
+
+                fixedScanResult.setStreetname(address);
+                String fromStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber"));
+                String toStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("ToStreetNumber"));
+
+                if (fromStreetNo.equals(toStreetNo)) fixedScanResult.setStreetnumber(RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber")));
 
                 String barcodeType = Utilities.getBarcodeLogType(barcode);
 

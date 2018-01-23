@@ -37,6 +37,13 @@ public class Label {
     private boolean missort = false;
 
 
+    private String addressee;
+    private String postalCode;
+    private String municipality;
+    private String streetname;
+    private String streetnumber;
+    private String streettype;
+    private String streetunit;
 
 
 
@@ -152,6 +159,62 @@ public class Label {
 
     public void setMissort(boolean missort) {
         this.missort = missort;
+    }
+
+    public String getAddressee() {
+        return addressee;
+    }
+
+    public void setAddressee(String addressee) {
+        this.addressee = addressee;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    public String getMunicipality() {
+        return municipality;
+    }
+
+    public void setMunicipality(String municipality) {
+        this.municipality = municipality;
+    }
+
+    public String getStreetname() {
+        return streetname;
+    }
+
+    public void setStreetname(String streetname) {
+        this.streetname = streetname;
+    }
+
+    public String getStreetnumber() {
+        return streetnumber;
+    }
+
+    public void setStreetnumber(String streetnumber) {
+        this.streetnumber = streetnumber;
+    }
+
+    public String getStreettype() {
+        return streettype;
+    }
+
+    public void setStreettype(String streettype) {
+        this.streettype = streettype;
+    }
+
+    public String getStreetunit() {
+        return streetunit;
+    }
+
+    public void setStreetunit(String streetunit) {
+        this.streetunit = streetunit;
     }
 
     /**

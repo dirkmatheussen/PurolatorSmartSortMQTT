@@ -354,6 +354,8 @@ public class MQTTGlassPahoComms {
         } else  {
             try {
                 FixedScanResult fixedScanResult = gson.fromJson(jsonIn, FixedScanResult.class);
+
+                Log.i(TAG,"Postalcode in FixedScanResult: " + fixedScanResult.getPostalCode() );
                 //process the result, handle by HandleFixedResult
                 EventBus.getDefault().post(fixedScanResult);
             }catch (Exception e){

@@ -18,11 +18,13 @@ public class FixedScanResult {
     private String sideofBelt;
     private String pinCode;
 
+    private String addressee;           //to be used with OCR
     private String postalCode;
     private String municipality;
     private String streetname;
     private String streetnumber;
-
+    private String streetunit;
+    private String streettype;
 
     private String scannedCode;
     private Date scanDate;
@@ -31,6 +33,7 @@ public class FixedScanResult {
     private String senderType;           //type of the Sender (FIXED,GLASS,WAVE)
     private String glassTarget;         //name of the receiver
     private boolean missort = false;     //default missort = false
+
 
 
     public FixedScanResult(){
@@ -110,6 +113,14 @@ public class FixedScanResult {
         this.postalCode = postalCode;
     }
 
+    public String getAddressee() {
+        return addressee;
+    }
+
+    public void setAddressee(String addressee) {
+        this.addressee = addressee;
+    }
+
     public String getMunicipality() {
         return municipality;
     }
@@ -132,6 +143,22 @@ public class FixedScanResult {
 
     public void setStreetnumber(String streetnumber) {
         this.streetnumber = streetnumber;
+    }
+
+    public String getStreetunit() {
+        return streetunit;
+    }
+
+    public void setStreetunit(String streetunit) {
+        this.streetunit = streetunit;
+    }
+
+    public String getStreettype() {
+        return streettype;
+    }
+
+    public void setStreettype(String streettype) {
+        this.streettype = streettype;
     }
 
     public String getSenderType() {
@@ -172,4 +199,6 @@ public class FixedScanResult {
     public void setMissort(boolean missort) {
         this.missort = missort;
     }
+
+
 }

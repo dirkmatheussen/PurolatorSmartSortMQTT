@@ -493,6 +493,12 @@ public class PurolatorActivityFixed extends Activity {
 //                    fixedScanResult.setPostalCode(label.getPostalCode);
                     fixedScanResult.setRouteNumber(label.getRouteNumber());
                     fixedScanResult.setShelfNumber(label.getShelfNumber());
+                    fixedScanResult.setPostalCode(label.getPostalCode());
+                    fixedScanResult.setStreetunit(label.getStreetunit());
+                    fixedScanResult.setMunicipality(label.getMunicipality());
+                    fixedScanResult.setStreetnumber(label.getStreetnumber());
+                    fixedScanResult.setStreetname(label.getStreetname());
+                    fixedScanResult.setAddressee(label.getAddressee());
 
                     EventBus.getDefault().post(fixedScanResult);
                 }
@@ -543,6 +549,19 @@ public class PurolatorActivityFixed extends Activity {
             // remove package from the remediation list, ready to rescan
             UIUpdater uiUpdater = new UIUpdater();
             uiUpdater.setRemediationId(Utilities.getPINCode(ocrData.getOcrResult()));
+            uiUpdater.setErrorCode("REM");
+            uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);
+            EventBus.getDefault().post(uiUpdater);
+
+            return;
+        }
+
+        if (event.getMessage().contains("MISMESSAGE")){                 // postal code & street entered in the smartglasses
+
+
+            // remove package from the remediation list, ready to rescan
+            UIUpdater uiUpdater = new UIUpdater();
+            uiUpdater.setRemediationId(Utilities.getPINCode(event.getBarcode()));
             uiUpdater.setErrorCode("REM");
             uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);
             EventBus.getDefault().post(uiUpdater);
@@ -871,6 +890,13 @@ public class PurolatorActivityFixed extends Activity {
         label.setScannedCode(event.getScannedCode());
         label.setLabelType(0);
         label.setRemediationId(event.getRemediationId());
+
+        label.setPostalCode(event.getPostalCode());
+        label.setStreetunit(event.getStreetunit());
+        label.setStreetname(event.getStreetname());
+        label.setMunicipality(event.getMunicipality());
+        label.setAddressee(event.getAddressee());
+
 
         //add new entry
 

@@ -22,6 +22,7 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.InputFilter;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -138,11 +139,16 @@ public class PurolatorActivityGlass extends Activity {
     ArrayList<String> rpmStreets = new ArrayList<String>();
     ArrayList<String> rpmPostalCodes = new ArrayList<String>();     //for autofill of postalcodes
     ArrayAdapter<String> streetAdapter;
+
     ArrayList<RPMLookUp> rpmLookUps = new ArrayList<RPMLookUp>();
+    RPMLookUp  rpmEdit = null;  //edited address
+
 
 
     boolean popupActive = false;
     Button mOkBtn;
+    Button mMisBtn;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -478,7 +484,7 @@ public class PurolatorActivityGlass extends Activity {
                 if (!jsonString.isEmpty()) rpmLookUps = gson.fromJson(jsonString,RPMLookUpType);
 
 
-
+/*
                 ArrayList<String> streetInfos = new ArrayList<String>();
                 for (RPMLookUp rpmLookUp:rpmLookUps){
                     String streetInfo = new String();
@@ -488,13 +494,15 @@ public class PurolatorActivityGlass extends Activity {
                     streetInfo = streetInfo + rpmLookUp.getStreetType() + " ";
                     streetInfo = streetInfo + rpmLookUp.getFromNumber() + " ";
                     if (rpmLookUp.getToNumber() != rpmLookUp.getFromNumber()) streetInfo = streetInfo + rpmLookUp.getToNumber();
+                    streetInfo = streetInfo + rpmLookUp.isUniqueStreet();
+
                     streetInfos.add(streetInfo.trim());
                 }
 
                 gson = new Gson();
                 final String json = gson.toJson(streetInfos);
-
-                updatePopup(json,true);
+*/
+                updatePopup(jsonString,true);
 
                 break;
             case "START":
@@ -602,7 +610,7 @@ public class PurolatorActivityGlass extends Activity {
                                 break;
                             case "MAKEPOPUP":
                                 String[] messages = event.getErrorMessage().split("[;]");
-                                if (messages.length ==2) makePopup(messages[0],messages[1],true);
+                                if (messages.length ==2) makePopup(messages[0],messages[1],false);
                                 break;
                             case "UPDATEPOPUP":
                                 updatePopup(event.getErrorMessage(),true);
@@ -689,7 +697,7 @@ public class PurolatorActivityGlass extends Activity {
                 labelBarcodeResult = label.getScannedCode();
             }
 
-            if (labelBarcodeResult.equals(barcodeResult) && (label.getRouteNumber().equals("REM") ||label.getRouteNumber().equals("XXX"))) {
+            if (labelBarcodeResult.equals(barcodeResult) && (label.getRouteNumber().equals("REM") ||label.getRouteNumber().equals("XXX") || label.getRouteNumber().equals("MIS"))) {
                 return true;
             }
 
@@ -725,7 +733,9 @@ public class PurolatorActivityGlass extends Activity {
                 uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);
                 uiUpdater.setScannedCode(null);
                 updateBottom(uiUpdater);
-                labels4Shelf.remove(shelfLabel);
+                labels4Shelf.clear();       //should contain 0 or 1 label
+
+//                labels4Shelf.remove(shelfLabel);
             }
 
         }
@@ -745,11 +755,24 @@ public class PurolatorActivityGlass extends Activity {
 
         if (D) Log.i(TAG, "In updateBottom for PINCode: " + event.getScannedCode());
 
+        if (event.getScannedCode() == null){
+            dateView.setText("");
+            pinView.setText("");           //contains shelf scan information
+            pudroView.setText("");
+            sideView.setText("");
+            routeView.setText("");
+            shelfView.setText("");
+            sequenceView.setText("");
+            return;
+        }
 
 
-        if (event.getScannedCode() == null) {
+        //parcel is put in shelf
+        if (event.getScannedCode().startsWith("SHELF")){
+
+
             dateView.setText(getResources().getString(R.string.packagedrop)+" ");
-            pinView.setText(event.getErrorMessage());
+            pinView.setText(event.getErrorMessage());           //contains shelf scan information
             pudroView.setText("");
             sideView.setText("");
             routeView.setText("");
@@ -757,6 +780,7 @@ public class PurolatorActivityGlass extends Activity {
             sequenceView.setText("");
 //            scannedLabels.remove(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf());
             if (event.isCorrectBay()) {
+
                 PurolatorSmartsortMQTT.getsInstance().setPackageInShelf(null);
                 labelLayout.setBackgroundColor(getResources().getColor(android.R.color.holo_orange_light));
 
@@ -765,6 +789,40 @@ public class PurolatorActivityGlass extends Activity {
                 labelLayout.setBackgroundColor(getResources().getColor(android.R.color.holo_red_dark));
 
             }
+
+
+            //TODO check if all address information is available
+            // if not popup the screen to complete the adress information
+            if ((labels4Shelf.get(0).getStreetnumber() ==  null || labels4Shelf.get(0).getStreetnumber().isEmpty()) || (labels4Shelf.get(0).getStreetname() == null || labels4Shelf.get(0).getStreetname().isEmpty() || labels4Shelf.get(0).getStreetnumber().equals("0"))) {
+                String pinCode = Utilities.getPINCode(labels4Shelf.get(0).getScannedCode());
+                makePopup(pinCode, labels4Shelf.get(0).getPostalCode(), true);
+            } else {
+
+                Logger manifestLog = new Logger();
+
+                manifestLog.setPostalCode(labels4Shelf.get(0).getPostalCode());
+                manifestLog.setStreetName(labels4Shelf.get(0).getStreetname());
+                manifestLog.setStreetNumber(labels4Shelf.get(0).getStreetnumber());
+                manifestLog.setStreetType(labels4Shelf.get(0).getStreettype());
+                manifestLog.setStreetNumberSuffix(labels4Shelf.get(0).getStreetunit());
+                manifestLog.setMunicipalityName(labels4Shelf.get(0).getMunicipality());
+                manifestLog.setRouteNumber(labels4Shelf.get(0).getRouteNumber());
+                manifestLog.setShelfNumber(labels4Shelf.get(0).getShelfNumber());
+                manifestLog.setUnitNumber(labels4Shelf.get(0).getStreetunit());
+                manifestLog.setLogType("manifestlog");
+                manifestLog.setPinCode(labels4Shelf.get(0).getPinCode());
+                manifestLog.setCustomerName(labels4Shelf.get(0).getAddressee());
+                manifestLog.setDeliverySequence(labels4Shelf.get(0).getDeliverySequence());
+                manifestLog.setScannedCode(labels4Shelf.get(0).getScannedCode());
+                manifestLog.setShelfNumber(event.getShelfNumber());
+                manifestLog.setScanDateTime(new Date());
+                manifestLog.setTerminalID(PurolatorSmartsortMQTT.getsInstance().configData.getTerminalID());
+                EventBus.getDefault().post(manifestLog);
+
+                labels4Shelf.clear();       //should contain only 1 element
+            }
+
+
             return;
         }
 
@@ -777,7 +835,7 @@ public class PurolatorActivityGlass extends Activity {
             if (event.getPostalCode() != null && event.getPostalCode().length() > 3 ){ //&& !event.getPinCode().contains("MISDIRECT")) {
                 EventBus.getDefault().post(uiUpdater);
             }else {
-                makePopup(Utilities.getPINCode(event.getScannedCode()), event.getScannedCode(),true);
+                makePopup(Utilities.getPINCode(event.getScannedCode()), event.getScannedCode(),false);
             }
             dateView.setText("Remediation/Misdirect");
             pinView.setText("");
@@ -819,6 +877,7 @@ public class PurolatorActivityGlass extends Activity {
 
                 if (labelBarcodeResult.equals(barcodeResult)) {
 
+
                     dateView.setText("D: " + sdf.format(new Date()));
                     pinView.setText(label.getPinCode());
                     pudroView.setText(label.getPrimarySort());
@@ -830,6 +889,7 @@ public class PurolatorActivityGlass extends Activity {
 
                     //package is scanned to put into shelf, remove from upper list, but store it
                     //in a separate list till package is dropped on the shelf
+                    labels4Shelf.clear();       //only in label allowed due to change in logic
                     labels4Shelf.add(label);
 
                     changeLabelsAdapter(true, label);
@@ -841,7 +901,6 @@ public class PurolatorActivityGlass extends Activity {
                     ScheduledFuture scheduleLogFuture = directGlass.schedule(new Runnable() {
                         @Override
                         public void run() {
-                            Log.d(TAG, "Restore Color to original");
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -869,8 +928,25 @@ public class PurolatorActivityGlass extends Activity {
             shelfView.setText(event.getShelfNumber());
             sequenceView.setText(event.getDeliverySequence());
             //change the background color
-            labelLayout.setBackgroundColor(getResources().getColor(android.R.color.holo_red_dark));
+            if (PurolatorSmartsortMQTT.getsInstance().isRouteValid(event.getRouteNumber())){
+                labelLayout.setBackgroundColor(getResources().getColor(android.R.color.holo_green_light));
+                ScheduledExecutorService directGlass = Executors.newScheduledThreadPool(2);
+                ScheduledFuture scheduleLogFuture = directGlass.schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                labelLayout.setBackgroundColor(getResources().getColor(android.R.color.holo_orange_light));
+                            }
+                        });
+                    }
+                }, 1, TimeUnit.SECONDS);
+                //
 
+            } else {
+                labelLayout.setBackgroundColor(getResources().getColor(android.R.color.holo_red_dark));
+            }
         }
         //check if the next first labels are remediation labels and remove them : not needed in the accumulation bay mode
         //labels are ordered in sequence of scanning
@@ -911,6 +987,13 @@ public class PurolatorActivityGlass extends Activity {
         label.setShelfNumber(event.getShelfNumber());
         label.setSideofBelt(event.getSideofBelt());
         label.setScannedCode(event.getScannedCode());
+
+        label.setPostalCode(event.getPostalCode());
+        label.setAddressee(event.getAddressee());
+        label.setStreetname(event.getStreetname());
+        label.setStreetnumber(event.getStreetnumber());
+        label.setStreetunit(event.getStreetunit());
+        label.setMunicipality(event.getMunicipality());
 
         //add new entry
         changeLabelsAdapter(false,label);
@@ -1076,10 +1159,11 @@ public class PurolatorActivityGlass extends Activity {
      * Make a popupwindow to enter postalcode or streetcode for lookup in RPM database (on tablet)
      *
      * @param pinCode       //for identification
-     * @param streets       //false= enter postcode, true = enter streetname
+     *
+     * @param shelfScan       //if this window is activated with a shelf scan or not
      */
 
-    private void makePopup(final String pinCode,  final String barcode, boolean streets){
+    private void makePopup(final String pinCode,  final String barcode, final boolean shelfScan){
 
         runOnUiThread(new Runnable() {
             @Override
@@ -1109,10 +1193,36 @@ public class PurolatorActivityGlass extends Activity {
                 postalCodeEdit.setFilters(setPostalFilters);
                 postalCodeEdit.setAdapter(postalCodesAutofill);
 
-
-
                 String postalCode = Utilities.getPostalCode(barcode);
                 if (postalCode !=null) postalCodeEdit.setText(postalCode);
+
+                final EditText postalCodeEntry = (EditText) popupWindow.findViewById(R.id.postalCodeEntry);
+                postalCodeEntry.setEnabled(false);
+                postalCodeEntry.setInputType(InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+                final EditText streetEntry = (EditText) popupWindow.findViewById(R.id.streetEntry);
+                streetEntry.setEnabled(false);
+                streetEntry.setInputType(InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+                final EditText streetTypeEntry = (EditText) popupWindow.findViewById(R.id.streetTypeEntry);
+                streetTypeEntry.setEnabled(false);
+                streetTypeEntry.setInputType(InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+                final EditText streetNrEntry = (EditText) popupWindow.findViewById(R.id.streetNrEntry);
+                streetNrEntry.setEnabled(false);
+                streetNrEntry.setInputType(InputType.TYPE_CLASS_NUMBER);
+                final EditText streetUnitEntry = (EditText) popupWindow.findViewById(R.id.streetUnitEntry);
+                streetUnitEntry.setEnabled(false);
+                streetUnitEntry.setInputType(InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+                final EditText municipalityEntry = (EditText) popupWindow.findViewById(R.id.municipalityEntry);
+                municipalityEntry.setEnabled(false);
+                municipalityEntry.setInputType(InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+
+                mMisBtn = (Button) popupWindow.findViewById(R.id.mis_button);
+                if (pinCode.contains("MIS")){
+                    mMisBtn.setVisibility(View.VISIBLE);
+                } else {
+                    mMisBtn.setVisibility(View.INVISIBLE);
+                }
+
+
 
                 mOkBtn = (Button) popupWindow.findViewById(R.id.ok_button);
                 mOkBtn.setEnabled(false);
@@ -1127,6 +1237,109 @@ public class PurolatorActivityGlass extends Activity {
                 mStreetNameEdit.setAdapter(streetAdapter);
                 mStreetNameEdit.setFocusable(true);
 
+
+                streetAdapter.registerDataSetObserver(new DataSetObserver() {
+                    @Override
+                    public void onChanged() {
+                        super.onChanged();
+
+                        if (streetAdapter.getCount() == 1){
+                            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                            if (!shelfScan)
+                                imm.hideSoftInputFromWindow(postalCodeEdit.getWindowToken(), 0);
+
+                            postalCodeEntry.setText(rpmLookUps.get(0).getPostalCode());
+                            streetEntry.setText(rpmLookUps.get(0).getStreetName());
+                            if (rpmLookUps.get(0).getFromNumber() == rpmLookUps.get(0).getToNumber())
+                                streetNrEntry.setText(""+rpmLookUps.get(0).getFromNumber());
+                            //TODO streettype in dropdown
+                            streetTypeEntry.setText(rpmLookUps.get(0).getStreetType());
+                            municipalityEntry.setText(rpmLookUps.get(0).getMunicipality());
+
+                            postalCodeEntry.setEnabled(true);
+                            streetEntry.setEnabled(true);
+                            streetTypeEntry.setEnabled(true);
+                            streetNrEntry.setEnabled(true);
+                            streetUnitEntry.setEnabled(true);
+                            municipalityEntry.setEnabled(true);
+
+                            mOkBtn.setEnabled(true);
+                            streetNrEntry.requestFocus();
+                            imm.showSoftInput(streetNrEntry, InputMethodManager.SHOW_IMPLICIT);
+
+                            rpmEdit = new RPMLookUp();
+                            rpmEdit.setRouteNumber(rpmLookUps.get(0).getRouteNumber());
+
+
+                        }
+                    }
+                });
+
+
+                if (shelfScan){
+//                    streetAdapter.add("1");             //force a change
+//                    streetAdapter.remove("1");
+
+                    postalCodeEntry.setText(labels4Shelf.get(0).getPostalCode());
+                    streetEntry.setText(labels4Shelf.get(0).getStreetname());
+                    streetNrEntry.setText(labels4Shelf.get(0).getStreetnumber());
+                    streetTypeEntry.setText(labels4Shelf.get(0).getStreettype());
+                    streetUnitEntry.setText(labels4Shelf.get(0).getStreetunit());
+                    municipalityEntry.setText(labels4Shelf.get(0).getMunicipality());
+
+                    postalCodeEntry.setEnabled(true);
+                    streetEntry.setEnabled(true);
+                    streetTypeEntry.setEnabled(true);
+                    streetNrEntry.setEnabled(true);
+                    streetUnitEntry.setEnabled(true);
+                    municipalityEntry.setEnabled(true);
+
+                    mOkBtn.setEnabled(true);
+                    streetNrEntry.requestFocus();
+                    InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(streetNrEntry, InputMethodManager.SHOW_IMPLICIT);
+
+                    rpmEdit = new RPMLookUp();
+                    rpmEdit.setRouteNumber(labels4Shelf.get(0).getRouteNumber());
+
+                    postalCodeEdit.setEnabled(false);
+
+                } else {
+                    postalCodeEdit.setEnabled(true);
+                }
+
+
+                mStreetNameEdit.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                        imm.hideSoftInputFromWindow(postalCodeEdit.getWindowToken(), 0);
+
+                        postalCodeEntry.setText(rpmLookUps.get(position).getPostalCode());
+                        streetEntry.setText(rpmLookUps.get(position).getStreetName());
+                        if (rpmLookUps.get(position).getFromNumber() == rpmLookUps.get(position).getToNumber())
+                            streetNrEntry.setText(""+rpmLookUps.get(position).getFromNumber());
+                        //TODO streettype in dropdown
+                        streetTypeEntry.setText(rpmLookUps.get(position).getStreetType());
+                        municipalityEntry.setText(rpmLookUps.get(position).getMunicipality());
+
+                        postalCodeEntry.setEnabled(true);
+                        streetEntry.setEnabled(true);
+                        streetTypeEntry.setEnabled(true);
+                        streetNrEntry.setEnabled(true);
+                        streetUnitEntry.setEnabled(true);
+                        municipalityEntry.setEnabled(true);
+
+                        mOkBtn.setEnabled(true);
+                        streetNrEntry.requestFocus();
+                        imm.showSoftInput(streetNrEntry, InputMethodManager.SHOW_IMPLICIT);
+
+                        rpmEdit = new RPMLookUp();
+                        rpmEdit.setRouteNumber(rpmLookUps.get(position).getRouteNumber());
+
+                    }
+                });
+/*
                 mStreetNameEdit.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
                     @Override
                     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
@@ -1156,8 +1369,8 @@ public class PurolatorActivityGlass extends Activity {
 
                 });
 
-
-                if (postalCode.length() == 6) {
+*/
+                if (postalCode != null && postalCode.length() == 6) {
 
                     postalCodeEdit.clearListSelection();
                     postalCodeEdit.dismissDropDown();
@@ -1183,7 +1396,7 @@ public class PurolatorActivityGlass extends Activity {
                     imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
 
 
-                } else {
+                } else if (!shelfScan){
 
                     postalCodeEdit.postDelayed(new Runnable() {
                         public void run() {
@@ -1198,6 +1411,9 @@ public class PurolatorActivityGlass extends Activity {
                     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                         if(actionId == EditorInfo.IME_ACTION_DONE || event.getKeyCode() == KeyEvent.KEYCODE_ENTER)  {
                             // send the postcode to the tablet to retrieve possible streets & numbers
+                            postalCodeEdit.clearListSelection();
+                            postalCodeEdit.dismissDropDown();
+
                             streetAdapter.clear();
                             if (postalCodeEdit.getText().length() == 6) {
                                 if (!PurolatorSmartsortMQTT.getsInstance().getConfigData().isGlassRemediation()) {
@@ -1222,6 +1438,7 @@ public class PurolatorActivityGlass extends Activity {
                                     imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
                                     return true;
                                 }
+
                             }
                         }
                         return false;
@@ -1233,6 +1450,12 @@ public class PurolatorActivityGlass extends Activity {
                 postalCodeEdit.addTextChangedListener(new TextWatcher() {
 
                     public void afterTextChanged(Editable s) {
+                        if (s.length() == 1||s.length()==3 || s.length() == 5){
+                            postalCodeEdit.setInputType(InputType.TYPE_CLASS_NUMBER);
+                        } else {
+                            postalCodeEdit.setInputType(InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+
+                        }
                         if (s.length() == 6){
                             BaseInputConnection inputConnection = new BaseInputConnection(postalCodeEdit, true);
                             inputConnection.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
@@ -1240,6 +1463,20 @@ public class PurolatorActivityGlass extends Activity {
                         } else if (!streetAdapter.isEmpty()) {
                             streetAdapter.clear();
                             mOkBtn.setEnabled(false);
+
+                            postalCodeEntry.setEnabled(false);
+                            postalCodeEntry.setText("");
+                            streetEntry.setEnabled(false);
+                            streetEntry.setText("");
+                            streetTypeEntry.setEnabled(false);
+                            streetTypeEntry.setText("");
+                            streetNrEntry.setEnabled(false);
+                            streetNrEntry.setText("");
+                            streetUnitEntry.setEnabled(false);
+                            streetUnitEntry.setText("");
+                            municipalityEntry.setEnabled(false);
+                            municipalityEntry.setText("");
+
 
                         }
 
@@ -1254,9 +1491,53 @@ public class PurolatorActivityGlass extends Activity {
                     }
                 });
 
+                mMisBtn.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Toast.makeText(PurolatorActivityGlass.this,"Printing Misdirect Label",Toast.LENGTH_LONG).show();
+                        String barcode = null;
+                        //delete from the toplist
+                        for (Label label : labels) {
+                            if (label.getPinCode() != null && label.getPinCode().equalsIgnoreCase(pinCode)) {
+                                barcode = label.getScannedCode();
+                                GlassMessage glassMessage = new GlassMessage();
+                                glassMessage.setMessage("MISMESSAGE");
+                                glassMessage.setBarcode(barcode);
+                                glassMessage.setFixedTarget(Utilities.makeTargetName("FIXED", "FIXED"));
+                                glassMessage.setGlassName(PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceName());
+                                EventBus.getDefault().post(glassMessage);
+                                //also remove from list of scanned barcodes
+                                PurolatorSmartsortMQTT.packagesList.getBarcodeScans().remove(barcode);
+                                changeLabelsAdapter(true, label);
+                                break;
+                            }
+                        }
+                        PurolatorSmartsortMQTT.getsInstance().setPackageInShelf(null);
+
+
+
+                        popupWindow.dismiss();
+                        popupActive = false;            //enable updates on screen again
+
+                    }
+                });
+
                 mOkBtn.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        rpmEdit.setPostalCode(postalCodeEntry.getText().toString());
+                        rpmEdit.setStreetName(streetEntry.getText().toString());
+                        rpmEdit.setStreetType(streetTypeEntry.getText().toString());
+                        if (!streetNrEntry.getText().toString().trim().isEmpty())
+                            rpmEdit.setFromNumber(Integer.valueOf(streetNrEntry.getText().toString()));
+                        rpmEdit.setToNumber(rpmEdit.getFromNumber());
+                        rpmEdit.setFromUnitNumber(streetUnitEntry.getText().toString());
+                        if (rpmEdit.getFromUnitNumber().length() == 0) rpmEdit.setFromUnitNumber("0");
+                        rpmEdit.setToUnitNumber(rpmEdit.getFromUnitNumber());
+                        rpmEdit.setMunicipality(municipalityEntry.getText().toString());
+                        if (rpmEdit.getMunicipality().length() == 0) rpmEdit.setMunicipality("0");
+                        rpmEdit.setUniqueStreet(true);
+
                         String barcode = null;
                         //delete from the toplist
                         for (Label label : labels) {
@@ -1268,14 +1549,48 @@ public class PurolatorActivityGlass extends Activity {
                                 break;
                             }
                         }
-                        // only one address in the list
-                        makeOCRMessage(rpmLookUps.get(0),barcode);
-                        PurolatorSmartsortMQTT.getsInstance().setPackageInShelf(null);
+                        //
+                        if (!shelfScan) {
+                            makeOCRMessage(rpmEdit, barcode);
+                            PurolatorSmartsortMQTT.getsInstance().setPackageInShelf(null);
+                        }else {
+                            labels4Shelf.get(0).setPostalCode(rpmEdit.getPostalCode());
+                            labels4Shelf.get(0).setMunicipality(rpmEdit.getMunicipality());
+                            labels4Shelf.get(0).setStreetunit(rpmEdit.getFromUnitNumber());
+                            labels4Shelf.get(0).setStreetnumber(String.valueOf(rpmEdit.getFromNumber()));
+//                            labels4Shelf.get(0).setAddressee(rpmEdit.get);
+                            labels4Shelf.get(0).setPostalCode(rpmEdit.getPostalCode());
+                            labels4Shelf.get(0).setStreettype(rpmEdit.getStreetType());
+                            labels4Shelf.get(0).setRouteNumber(rpmEdit.getRouteNumber());
+                            labels4Shelf.get(0).setShelfNumber(barcode);
 
-//                        popupWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+                            Logger manifestLog = new Logger();
+
+                            manifestLog.setPostalCode(labels4Shelf.get(0).getPostalCode());
+                            manifestLog.setStreetName(labels4Shelf.get(0).getStreetname());
+                            manifestLog.setStreetNumber(labels4Shelf.get(0).getStreetnumber());
+                            manifestLog.setStreetType(labels4Shelf.get(0).getStreettype());
+                            manifestLog.setStreetNumberSuffix(labels4Shelf.get(0).getStreetunit());
+                            manifestLog.setMunicipalityName(labels4Shelf.get(0).getMunicipality());
+                            manifestLog.setRouteNumber(labels4Shelf.get(0).getRouteNumber());
+                            manifestLog.setShelfNumber(labels4Shelf.get(0).getShelfNumber());
+                            manifestLog.setUnitNumber(labels4Shelf.get(0).getStreetunit());
+                            manifestLog.setLogType("manifestlog");
+                            manifestLog.setPinCode(labels4Shelf.get(0).getPinCode());
+                            manifestLog.setCustomerName(labels4Shelf.get(0).getAddressee());
+                            manifestLog.setDeliverySequence(labels4Shelf.get(0).getDeliverySequence());
+                            manifestLog.setScannedCode(labels4Shelf.get(0).getScannedCode());
+                            manifestLog.setShelfNumber(labels4Shelf.get(0).getShelfNumber());
+                            manifestLog.setScanDateTime(new Date());
+                            manifestLog.setTerminalID(PurolatorSmartsortMQTT.getsInstance().configData.getTerminalID());
+                            EventBus.getDefault().post(manifestLog);
+
+                            labels4Shelf.clear();
+
+                        }
+    //                        popupWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
                         popupWindow.dismiss();
                         popupActive = false;            //enable updates on screen again
-
 
                     }
                 });
@@ -1318,31 +1633,63 @@ public class PurolatorActivityGlass extends Activity {
     /**
      * Show the streets Autocomplete field in the popup Window
      *
-     * @param rpmInfo
+     * @param jsonString
      * @param streets       //false= sorted on street, true = sorted on postcode
      *
      */
 
 
-    private void updatePopup(final String rpmInfo, final boolean streets) {
+    private void updatePopup(final String jsonString, final boolean streets) {
 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ArrayList<String> rpmRecords = new ArrayList<String>();
-                Gson gson = new Gson();
-                Type StringLookUpType = new TypeToken<ArrayList<String>>() {}.getType();
-                if (!rpmInfo.isEmpty()) {
-//                    mPrintBtn.setEnabled(true);
-                    rpmRecords = gson.fromJson(rpmInfo, StringLookUpType);
-                }
-                streetAdapter.addAll(rpmRecords);
-                streetAdapter.notifyDataSetChanged();
 
-                //only one record (street). Enable the OK button
-                if (streetAdapter.getCount() == 1 ){
-                    mOkBtn.setEnabled(true);
+
+                //hide the keyboard
+                View view = getCurrentFocus();
+                if (view != null) {
+                    InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                 }
+
+
+
+                Gson gson =  new Gson();
+                Type RPMLookUpType = new TypeToken<ArrayList<RPMLookUp>>() {}.getType();
+                ArrayList<RPMLookUp> lRpmLookUps = new ArrayList<RPMLookUp>();
+                if (!jsonString.isEmpty()) lRpmLookUps = gson.fromJson(jsonString,RPMLookUpType);
+
+
+                ArrayList<String> streetInfos = new ArrayList<String>();
+                boolean uniqueStreet = false;
+                for (RPMLookUp rpmLookUp:lRpmLookUps){
+                    String streetInfo = new String();
+
+                    streetInfo = rpmLookUp.getRouteNumber() +"    ";
+                    streetInfo = streetInfo + rpmLookUp.getStreetName() + " ";
+                    streetInfo = streetInfo + rpmLookUp.getStreetType() + "  Nr: ";
+                    streetInfo = streetInfo + rpmLookUp.getFromNumber();
+                    if (rpmLookUp.getToNumber() != rpmLookUp.getFromNumber()) streetInfo = streetInfo + "-"+ rpmLookUp.getToNumber();
+                    if (rpmLookUp.getFromUnitNumber() != "") {
+                        streetInfo = streetInfo + " Unit: " + rpmLookUp.getFromUnitNumber();
+                        if (!rpmLookUp.getToUnitNumber().equals(rpmLookUp.getFromUnitNumber()))
+                            streetInfo = streetInfo + "-" + rpmLookUp.getToUnitNumber();
+                    }
+                    uniqueStreet =  rpmLookUp.isUniqueStreet();
+
+                    streetInfos.add(streetInfo.trim());
+                }
+
+                if (!streetInfos.isEmpty()) {
+                    streetAdapter.addAll(streetInfos);
+                    streetAdapter.notifyDataSetChanged();
+                    mMisBtn.setVisibility(View.INVISIBLE);
+
+                } else {
+                    mMisBtn.setVisibility(View.VISIBLE);
+                }
+
 
             }
         });
@@ -1362,18 +1709,19 @@ public class PurolatorActivityGlass extends Activity {
         String pinCode = Utilities.getPINCode(barcode);
 
         if (pinCode != null) {
-            String ocrString = "V01~A01|R01~|R02~|R03~%1|R04~%2|R05~|R07~%3|S02~%4|S03~|S04~0|S05~0|S06~0|S07~0|S15~0";
+            String ocrString = "V01~A01|R01~|R02~%6|R03~%1|R04~%2|R05~|R06~%7|R07~%3|S02~%4|S03~|S04~0|S05~0|S06~0|S07~0|S15~0";
             if (message.getRouteNumber().length()>1){
-                ocrString = "V01~A01|R01~|R02~|R03~%1|R04~%2|R05~|R07~%3|S02~%4|S03~|S04~0|S05~0|S06~0|S07~0|S15~0|S16~%5";
+                ocrString = "V01~A01|R01~|R02~%6|R03~%1|R04~%2|R05~|R06~%7|R07~%3|S02~%4|S03~|S04~0|S05~0|S06~0|S07~0|S15~0|S16~%5";
                 ocrString = ocrString.replace("%5", message.getRouteNumber());
 
             }
-            //TODO what about street to number ?
+
             ocrString = ocrString.replace("%1", String.valueOf(message.getFromNumber()));                //streetnumber
             ocrString = ocrString.replace("%2", message.getStreetName() + " " + message.getStreetType());
             ocrString = ocrString.replace("%3", message.getPostalCode());
             ocrString = ocrString.replace("%4", Utilities.getPINCode(barcode));
-
+            ocrString = ocrString.replace("%6", message.getFromUnitNumber());
+            ocrString = ocrString.replace("%7", message.getMunicipality());
 
             GlassMessage glassMessage = new GlassMessage();
             glassMessage.setMessage("OCRMESSAGE::" + ocrString);

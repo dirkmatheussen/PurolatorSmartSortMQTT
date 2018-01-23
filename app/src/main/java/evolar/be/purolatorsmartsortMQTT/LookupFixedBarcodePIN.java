@@ -124,6 +124,72 @@ public class LookupFixedBarcodePIN {
 
                     if (D) Log.d(TAG,"Found in PIN!!!!");
                     final FixedScanResult fixedScanResult = new FixedScanResult();
+                    Logger logger = new Logger();
+
+
+
+
+                    if (Utilities.getBarcodeLogType(barcode).equals("2D")){
+
+                        //check if there is a \ and replace by |
+                        barcode = barcode.replace("\\","|");
+
+                        String[] parsed = barcode.split("[|]");
+                        for (String aParsed : parsed) {
+                            String[] valuePair = aParsed.split("[~]");
+
+                            if (valuePair.length >= 2) {
+
+
+                                switch (valuePair[0].toUpperCase()) {
+                                    case "RO1":
+                                        logger.setCustomerName(valuePair[1]);
+                                        fixedScanResult.setAddressee(valuePair[1]);
+
+                                    case "R03":             //street n#
+                                        logger.setStreetNumber(valuePair[1]);
+                                        fixedScanResult.setStreetnumber(valuePair[1]);
+                                        break;
+                                    case "R04":             //address
+                                        String parsedAddress[] = Utilities.parseAddress(valuePair[1]);
+                                        logger.setStreetName(parsedAddress[1]);
+                                        logger.setStreetType(parsedAddress[2]);
+                                        fixedScanResult.setStreetname(parsedAddress[1]);
+                                        fixedScanResult.setStreetunit(parsedAddress[2]);
+
+
+                                        break;
+                                    case "R05":             //address
+
+                                        break;
+                                    case "R06":             //municipality
+                                        logger.setMunicipalityName(valuePair[1]);
+                                        fixedScanResult.setMunicipality(valuePair[1]);
+                                        break;
+                                    case "R07":             //postal code
+                                        logger.setPostalCode(valuePair[1]);
+                                        fixedScanResult.setPostalCode(valuePair[1]);
+                                        break;
+                                    case "S04":
+                                        logger.setDeliveryTime(valuePair[1]);
+                                        break;
+                                    case "S05":
+                                        logger.setShipmentType(valuePair[1]);
+                                        break;
+                                    case "S06":
+                                        logger.setDeliveryType(valuePair[1]);
+                                        break;
+                                    case "S07":
+                                        logger.setDiversionCode(valuePair[1]);
+                                        break;
+                                    case "S15":
+                                        logger.setHandlingClassType(valuePair[1]);
+                                        break;
+                                }
+                            }
+                        }
+                    }
+
 
                     fixedScanResult.setRouteNumber(PINCursor.getString(PINCursor.getColumnIndex("RouteNumber")));
                     String shelfNumber = PINCursor.getString(PINCursor.getColumnIndex("TruckShelfOverride"));
@@ -158,7 +224,6 @@ public class LookupFixedBarcodePIN {
                     uiUpdater.setScannedCode(barcode);
                     EventBus.getDefault().post(uiUpdater);
 
-                    Logger logger = new Logger();
                     logger.setDevice_id(PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceName());
                     logger.setUserCode(PurolatorSmartsortMQTT.getsInstance().getConfigData().getUserId());
                     logger.setTerminalID(PurolatorSmartsortMQTT.getsInstance().getConfigData().getTerminalID());
@@ -182,59 +247,6 @@ public class LookupFixedBarcodePIN {
                         logger.setDiversionCode(barcode.substring(30,31));
                     }
 
-                    if (Utilities.getBarcodeLogType(barcode).equals("2D")){
-                        
-                        //check if there is a \ and replace by |
-                        barcode = barcode.replace("\\","|");
-
-                        String[] parsed = barcode.split("[|]");
-                        for (String aParsed : parsed) {
-                            String[] valuePair = aParsed.split("[~]");
-
-                            if (valuePair.length >= 2) {
-
-
-                                switch (valuePair[0].toUpperCase()) {
-                                    case "RO1":
-                                        logger.setCustomerName(valuePair[1]);
-
-                                    case "R03":             //street n#
-                                        logger.setStreetNumber(valuePair[1]);
-                                        break;
-                                    case "R04":             //address
-                                        String parsedAddress[] = Utilities.parseAddress(valuePair[1]);
-                                        logger.setStreetName(parsedAddress[1]);
-                                        logger.setStreetType(parsedAddress[2]);
-
-                                        break;
-                                    case "R05":             //address
-
-                                        break;
-                                    case "R06":             //municipality
-                                        logger.setMunicipalityName(valuePair[1]);
-                                        break;
-                                    case "R07":             //postal code
-                                        logger.setPostalCode(valuePair[1]);
-                                        break;
-                                    case "S04":
-                                        logger.setDeliveryTime(valuePair[1]);
-                                        break;
-                                    case "S05":
-                                        logger.setShipmentType(valuePair[1]);
-                                        break;
-                                    case "S06":
-                                        logger.setDeliveryType(valuePair[1]);
-                                        break;
-                                    case "S07":
-                                        logger.setDiversionCode(valuePair[1]);
-                                        break;
-                                    case "S15":
-                                        logger.setHandlingClassType(valuePair[1]);
-                                        break;
-                                }
-                            }
-                        }
-                    }
                     EventBus.getDefault().post(logger);
                 } else if (PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceType().equals("GLASS")) {
                     uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);

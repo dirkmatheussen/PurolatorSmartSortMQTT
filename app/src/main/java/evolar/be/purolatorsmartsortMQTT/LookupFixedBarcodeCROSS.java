@@ -206,7 +206,6 @@ public class LookupFixedBarcodeCROSS {
 
                 EventBus.getDefault().post(fixedScanResult);
 
-
                 if (!PurolatorSmartsortMQTT.getsInstance().getConfigData().isWaveValidation()) {
                     PurolatorSmartsortMQTT.getsInstance().sendToGlass(fixedScanResult);
 
@@ -232,6 +231,7 @@ public class LookupFixedBarcodeCROSS {
                 EventBus.getDefault().post(logger);
 
             } else  if (PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceType().equals("GLASS")) {
+                //TODO HANDLE MISDIRECT
 
             }
 
@@ -272,7 +272,7 @@ public class LookupFixedBarcodeCROSS {
                 if (D) EventBus.getDefault().post(uiUpdater);
             } else if (PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceType().equals("GLASS")){
 
-                //TODO HANDLE CROSSDOCK
+                //TODO HANDLE CROSSDOCK for Wearable
             }
 
             RPMCursor.close();
