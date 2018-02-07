@@ -2,21 +2,17 @@ package evolar.be.purolatorsmartsortMQTT;
 
 import android.app.Application;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.NetworkInfo;
-import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Build;
-import android.os.Environment;
 import android.util.Log;
-import android.widget.ArrayAdapter;
 
-import com.bugfender.sdk.Bugfender;
 import com.google.gson.Gson;
 
 import org.greenrobot.eventbus.EventBus;
@@ -28,19 +24,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import evolar.be.purolatorsmartsortMQTT.events.DatabaseName;
 import evolar.be.purolatorsmartsortMQTT.events.FetchDb;
@@ -49,9 +40,8 @@ import evolar.be.purolatorsmartsortMQTT.events.FixedScanResult;
 import evolar.be.purolatorsmartsortMQTT.events.GlassDeviceInfo;
 import evolar.be.purolatorsmartsortMQTT.events.GlassMessage;
 import evolar.be.purolatorsmartsortMQTT.events.Logger;
+import evolar.be.purolatorsmartsortMQTT.events.RPMLookUp;
 import evolar.be.purolatorsmartsortMQTT.events.UIUpdater;
-
-import static java.security.AccessController.getContext;
 
 
 /**
@@ -85,6 +75,7 @@ public class PurolatorSmartsortMQTT extends Application {
     LookupFixedBarcodeSSLWS mLookupFixedBarcodeSSLWS = new LookupFixedBarcodeSSLWS();
     LookupFixedBarcodeCROSS mLookupFixedBarcodeCROSS = new LookupFixedBarcodeCROSS();
     LookupFixedBarcodePOST mLookupFixedBarcodePOST = new LookupFixedBarcodePOST();
+    LookupFixedBarcodeADDR mLookupFixedBarcodeADDR = new LookupFixedBarcodeADDR();
 
 
     // conditionally created eventlistners
@@ -555,6 +546,20 @@ public class PurolatorSmartsortMQTT extends Application {
 
 
     }
+
+    /**
+     * Update the RPM database with address information handled by remediation
+     *
+     * @param event
+     */
+
+    @Subscribe
+    public void onRPMLookupEvent(RPMLookUp event){
+
+        updatePSTStreets(event);
+
+    }
+
 
     /**
      * Message received from a new registered Glass or a Glass to unregister
@@ -1334,6 +1339,58 @@ public class PurolatorSmartsortMQTT extends Application {
         PurolatorSmartsortMQTT.getsInstance().setTransactionActive(PurolatorSmartsortMQTT.RPM_DBTYPE,false);
         return;
 
+
+    }
+
+
+    /**
+     * Update the Streetinformation in the local PST Database
+     * @param rpmMessage
+     */
+
+    public void updatePSTStreets(RPMLookUp rpmMessage){
+
+        String[] selectColumns = {"PostalCode","Route","PIN","StreetName","StreetType","StreetNumber","UnitNumber","MunicipalityName","Addressee","ShelfNumber","DeliverySequenceID"};
+
+        SQLiteDatabase database = PurolatorSmartsortMQTT.getsInstance().getDatabase(PurolatorSmartsortMQTT.PST_DBTYPE);
+        if (database == null){
+            return;
+        }
+        //check if database is being moved
+        while (PurolatorSmartsortMQTT.getsInstance().movePSTDatabase){
+            try{
+                Thread.sleep(10);       //wait 10 milliseconds
+            } catch (InterruptedException ex){
+
+            }
+        }
+        //TODO Check if transaction is active
+
+
+        try {
+            PurolatorSmartsortMQTT.getsInstance().setTransactionActive(PurolatorSmartsortMQTT.PST_DBTYPE, true);
+
+            ContentValues insertValues = new ContentValues();
+            insertValues.put("PostalCode", rpmMessage.getPostalCode());
+            insertValues.put("Route", rpmMessage.getRouteNumber());
+            insertValues.put("PIN", rpmMessage.getPinCode());
+            insertValues.put("StreetName",rpmMessage.getStreetName());
+            insertValues.put("StreetType",rpmMessage.getStreetType());
+            insertValues.put("StreetNumber",rpmMessage.getFromNumber());
+            insertValues.put("UnitNumber",rpmMessage.getFromUnitNumber());
+            insertValues.put("MunicipalityName",rpmMessage.getMunicipality());
+            //TODO Check duplicate key issues
+            // check for PINcode
+            Cursor PSTCursor = database.query("PostalRoute", selectColumns, "PIN=?", new String[]{rpmMessage.getPinCode()}, null, null, null, null);
+            if (PSTCursor.getCount()> 0){
+                database.update("PostalRoute",insertValues,"PIN=?",new String[]{rpmMessage.getPinCode()});
+            } else {
+                database.insert("PostalRoute", null, insertValues);
+            }
+        } catch (Exception ex){
+            Log.e(TAG,"Error during PSTRPM database update actions: " +ex.getMessage());
+        }
+        PurolatorSmartsortMQTT.getsInstance().setTransactionActive(PurolatorSmartsortMQTT.PST_DBTYPE,false);
 
     }
 

@@ -232,6 +232,18 @@ public class LookupFixedBarcodeRPM {
                         uiUpdater.setRemediationId(pincode);
                         uiUpdater.setPinCode(pincode + " " + postalCode);
 
+                        String municipality = RPMCursor.getString(RPMCursor.getColumnIndex("MunicipalityName"));
+                        String address = RPMCursor.getString(RPMCursor.getColumnIndex("StreetName"));
+                        String fromStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber"));
+                        String toStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("ToStreetNumber"));
+
+                        uiUpdater.setMunicipality(municipality);
+                        uiUpdater.setStreetname(address);
+                        if (fromStreetNo.equals(toStreetNo)) uiUpdater.setStreetnumber(RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber")));
+                        if (RPMCursor.getString(RPMCursor.getColumnIndex("ToUnitNumber")).isEmpty())
+                            uiUpdater.setStreetunit(RPMCursor.getString(RPMCursor.getColumnIndex("FromUnitNumber")));
+
+
                         uiUpdater.setCorrectBay(false);
 
                         EventBus.getDefault().post(uiUpdater);
@@ -340,6 +352,18 @@ public class LookupFixedBarcodeRPM {
                         uiUpdater.setScannedCode(barcode);
                         uiUpdater.setRemediationId(pincode);
                         uiUpdater.setPinCode(pincode + " " + postalCode);
+
+                        String municipality = RPMCursor.getString(RPMCursor.getColumnIndex("MunicipalityName"));
+                        String address = RPMCursor.getString(RPMCursor.getColumnIndex("StreetName"));
+                        String fromStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber"));
+                        String toStreetNo = RPMCursor.getString(RPMCursor.getColumnIndex("ToStreetNumber"));
+
+                        uiUpdater.setMunicipality(municipality);
+                        uiUpdater.setStreetname(address);
+                        if (fromStreetNo.equals(toStreetNo)) uiUpdater.setStreetnumber(RPMCursor.getString(RPMCursor.getColumnIndex("FromStreetNumber")));
+                        if (RPMCursor.getString(RPMCursor.getColumnIndex("ToUnitNumber")).isEmpty())
+                            uiUpdater.setStreetunit(RPMCursor.getString(RPMCursor.getColumnIndex("FromUnitNumber")));
+
 
                         uiUpdater.setCorrectBay(false);
 
@@ -528,7 +552,7 @@ public class LookupFixedBarcodeRPM {
                                         case "RO1":
                                             logger.setCustomerName(valuePair[1]);
                                             fixedScanResult.setAddressee(valuePair[1]);
-
+                                            break;
                                         case "R03":             //street n#
                                             logger.setStreetNumber(valuePair[1]);
                                             fixedScanResult.setStreetnumber(valuePair[1]);
@@ -701,7 +725,7 @@ public class LookupFixedBarcodeRPM {
                                             case "RO1":
                                                 logger.setCustomerName(valuePair[1]);
                                                 fixedScanResult.setAddressee(valuePair[1]);
-
+                                                break;
                                             case "R03":             //street n#
                                                 logger.setStreetNumber(valuePair[1]);
                                                 fixedScanResult.setStreetnumber(valuePair[1]);

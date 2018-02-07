@@ -10,7 +10,7 @@ public class GlassMessage {
 
     String barcode;
     String glassName;               //name of the sender
-    String fixedTarget;             //name of the receiver
+    String fixedTarget;             //name of the receiver, if value is BROADCAST: send to all devices
     String message;                 //message
 
 

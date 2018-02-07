@@ -7,7 +7,7 @@
     <string name="instruction"> </string>
     <string name="errorfile">Problems reading the config file</string>
     <string name="fetchdata">Press Button to continue....</string>
-    <string name="packagedrop">Package dropped in:</string>
+    <string name="packagedrop">Package %1 dropped in:</string>
     <string name="datasync">Sync data from server...</string>
     <string name="fileload">file is loaded, load next file...</string>
     <string name="fileloadfail"> file failed to load, load next file...</string>

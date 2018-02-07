@@ -145,7 +145,7 @@ public class LookupFixedBarcodePIN {
                                     case "RO1":
                                         logger.setCustomerName(valuePair[1]);
                                         fixedScanResult.setAddressee(valuePair[1]);
-
+                                        break;
                                     case "R03":             //street n#
                                         logger.setStreetNumber(valuePair[1]);
                                         fixedScanResult.setStreetnumber(valuePair[1]);

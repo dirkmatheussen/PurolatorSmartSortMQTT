@@ -35,7 +35,7 @@ public class LookupFixedBarcodeOCR {
         EventBus.getDefault().register(this);
     }
 
-    @Subscribe(priority = 9)    //highest priority
+    @Subscribe(priority = 10)    //highest priority
     public void onFixedBarcodeScanEvent(FixedBarcodeScan event){
 
         if (D) Log.d(TAG,"In event");
@@ -414,9 +414,10 @@ public class LookupFixedBarcodeOCR {
                                     switch (valuePair[0].toUpperCase()) {
                                         case "RO1":
                                             logger.setCustomerName(valuePair[1]);
+                                            break;
                                         case "R02":
                                             logger.setUnitNumber(valuePair[1]);
-
+                                            break;
                                         case "R03":             //street n#
                                             logger.setStreetNumber(valuePair[1]);
                                             break;
@@ -550,8 +551,10 @@ public class LookupFixedBarcodeOCR {
                                     switch (valuePair[0].toUpperCase()) {
                                         case "RO1":
                                             logger.setCustomerName(valuePair[1]);
+                                            break;
                                         case "R02":
                                             logger.setUnitNumber(valuePair[1]);
+                                            break;
                                         case "R03":             //street n#
                                             logger.setStreetNumber(valuePair[1]);
                                             break;

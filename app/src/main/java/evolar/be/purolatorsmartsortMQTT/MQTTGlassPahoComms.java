@@ -1,6 +1,7 @@
 package evolar.be.purolatorsmartsortMQTT;
 
 import android.os.Build;
+import android.util.EventLog;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -27,6 +28,7 @@ import evolar.be.purolatorsmartsortMQTT.events.FixedMessage;
 import evolar.be.purolatorsmartsortMQTT.events.FixedScanResult;
 import evolar.be.purolatorsmartsortMQTT.events.GlassDeviceInfo;
 import evolar.be.purolatorsmartsortMQTT.events.GlassMessage;
+import evolar.be.purolatorsmartsortMQTT.events.RPMLookUp;
 import evolar.be.purolatorsmartsortMQTT.events.RingBarcodeScan;
 import evolar.be.purolatorsmartsortMQTT.events.UIUpdater;
 
@@ -348,9 +350,17 @@ public class MQTTGlassPahoComms {
             //process the result, handle by PuralotorActivityGlass
             EventBus.getDefault().post(fixedMessage);
 
-        } else if (topic.toString().contains("RINGSCAN")){
+        } else if (topic.toString().contains("RINGSCAN")) {
 
             EventBus.getDefault().post(new RingBarcodeScan(jsonIn));        //HandleRingBarcode
+
+        } else if (jsonIn.contains("GlassMessage")){                        // a broadcast from REM device; containing addres info to update
+            GlassMessage glassMessage = gson.fromJson(jsonIn,GlassMessage.class);
+            if (!glassMessage.getGlassName().equals(PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceName())) {
+                RPMLookUp rpmLookUp = gson.fromJson(glassMessage.getMessage(), RPMLookUp.class);
+                EventBus.getDefault().post(rpmLookUp);      //handled by PurolatorSmartsortMQTT
+            }
+
         } else  {
             try {
                 FixedScanResult fixedScanResult = gson.fromJson(jsonIn, FixedScanResult.class);
@@ -390,8 +400,11 @@ public class MQTTGlassPahoComms {
                 MqttMessage mqttMessage = new MqttMessage();
                 mqttMessage.setPayload(json.getBytes());
                 mqttMessage.setQos(2);          //exactly once
-
-                mqttClient.publish(getTargetTopic(), mqttMessage);
+                if (event.getFixedTarget() != null && event.getFixedTarget().startsWith("BROAD")){
+                    mqttClient.publish(PurolatorSmartsortMQTT.getsInstance().getConfigData().getTerminalID(),mqttMessage);
+                } else {
+                    mqttClient.publish(getTargetTopic(), mqttMessage);
+                }
                 if (D) Log.d(TAG, "Success Publish of Json: " + json);
 
             } catch (MqttException ex){

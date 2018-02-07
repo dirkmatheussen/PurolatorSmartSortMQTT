@@ -219,6 +219,7 @@ public class LookupFixedBarcodeCROSS {
                 uiUpdater.setRemediationId(pinCode);
 
                 EventBus.getDefault().post(uiUpdater);
+
                 Logger logger = new Logger();
                 logger.setDevice_id(PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceName());
                 logger.setUserCode(PurolatorSmartsortMQTT.getsInstance().getConfigData().getUserId());
@@ -231,7 +232,21 @@ public class LookupFixedBarcodeCROSS {
                 EventBus.getDefault().post(logger);
 
             } else  if (PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceType().equals("GLASS")) {
-                //TODO HANDLE MISDIRECT
+
+                String pinCode = Utilities.getPINCode(barcode);
+                if (pinCode == null) {
+                    pinCode = barcode;
+                }
+                uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);
+                uiUpdater.setPinCode("Package " + pinCode + " MISDIRECT");
+                uiUpdater.setScannedCode(barcode);
+                uiUpdater.setPostalCode(Utilities.getPostalCode(barcode));
+                uiUpdater.setRouteNumber("REM");
+                uiUpdater.setCorrectBay(false);
+
+                EventBus.getDefault().post(uiUpdater);
+
+
 
             }
 
@@ -272,7 +287,19 @@ public class LookupFixedBarcodeCROSS {
                 if (D) EventBus.getDefault().post(uiUpdater);
             } else if (PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceType().equals("GLASS")){
 
-                //TODO HANDLE CROSSDOCK for Wearable
+                String pinCode = Utilities.getPINCode(barcode);
+                if (pinCode == null) {
+                    pinCode = barcode;
+                }
+                uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);
+                uiUpdater.setPinCode("Package " + pinCode + " in Cross Dock");
+                uiUpdater.setScannedCode(barcode);
+                uiUpdater.setPostalCode(Utilities.getPostalCode(barcode));
+                uiUpdater.setRouteNumber("REM");
+                uiUpdater.setCorrectBay(false);
+
+                EventBus.getDefault().post(uiUpdater);
+
             }
 
             RPMCursor.close();

@@ -54,13 +54,26 @@ public class HandleRingBarcode {
         if (Utilities.isShelfScan(event.getBarcodeResult())) {
             UIUpdater uiUpdater;
 
+            if (PurolatorSmartsortMQTT.getsInstance().getPackageInShelf()!=null &&
+                    (PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getRouteNumber().equals("REM")
+                        ||PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getRouteNumber().equals("XXX")
+                        ||PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getRouteNumber().equals("MIS"))) {
+
+                return;
+            }
+
             if (PurolatorSmartsortMQTT.getsInstance().getPackageInShelf()!=null && PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getShelfNumber().isEmpty()){
-                if(D) Log.d(TAG,"no schelf number in database, acceept as correct");
+                if(D) Log.d(TAG,"no schelf number in database, accept as correct");
                 uiUpdater = new UIUpdater();
                 uiUpdater.setErrorMessage(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getRouteNumber()+" Shelf: " + event.getBarcodeResult()+" ");           //show the scanned package information
                 uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);
                 uiUpdater.setScannedCode("SHELF");
                 uiUpdater.setShelfNumber(event.getBarcodeResult());
+                uiUpdater.setPostalCode(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getPostalCode());
+                uiUpdater.setStreetname(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getStreetname());
+                uiUpdater.setStreetnumber(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getStreetnumber());
+                uiUpdater.setRouteNumber(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getRouteNumber());
+
                 //empty the screen & remove from PackageInShelf
                 EventBus.getDefault().post(uiUpdater);
                 return;
@@ -75,6 +88,12 @@ public class HandleRingBarcode {
                 uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);
                 uiUpdater.setScannedCode("SHELF");
                 uiUpdater.setShelfNumber(event.getBarcodeResult());
+                uiUpdater.setPostalCode(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getPostalCode());
+                uiUpdater.setStreetname(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getStreetname());
+                uiUpdater.setStreetnumber(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getStreetnumber());
+                uiUpdater.setRouteNumber(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf().getRouteNumber());
+
+
                 //empty the screen & remove from PackageInShelf
                 EventBus.getDefault().post(uiUpdater);
                 return;
@@ -181,12 +200,10 @@ public class HandleRingBarcode {
                 uiUpdater = new UIUpdater();
                 uiUpdater.setUpdateType(PurolatorSmartsortMQTT.UPD_BOTTOMSCREEN);
                 uiUpdater.setScannedCode(event.getBarcodeResult());
+                uiUpdater.setPostalCode("");
+
 
                 PurolatorSmartsortMQTT.packagesList.getBarcodeScans().remove(barcodeResult);
-
-                //TODO: a check is needed to see if additional street information is needed
-
-
 
                 EventBus.getDefault().post(uiUpdater);
 

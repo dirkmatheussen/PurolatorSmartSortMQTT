@@ -9,7 +9,6 @@ package evolar.be.purolatorsmartsortMQTT;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.DataSetObserver;
 import android.graphics.Color;
@@ -17,8 +16,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.InputFilter;
@@ -26,12 +23,9 @@ import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
@@ -44,27 +38,22 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.GridView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
-import android.widget.ViewSwitcher;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -74,13 +63,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import evolar.be.purolatorsmartsortMQTT.events.BarcodeScan;
 import evolar.be.purolatorsmartsortMQTT.events.FetchDb;
 import evolar.be.purolatorsmartsortMQTT.events.FixedMessage;
-import evolar.be.purolatorsmartsortMQTT.events.FixedScanResult;
 import evolar.be.purolatorsmartsortMQTT.events.GlassDeviceInfo;
 import evolar.be.purolatorsmartsortMQTT.events.GlassMessage;
 import evolar.be.purolatorsmartsortMQTT.events.Logger;
+import evolar.be.purolatorsmartsortMQTT.events.RPMLookUp;
 import evolar.be.purolatorsmartsortMQTT.events.RingBarcodeScan;
 import evolar.be.purolatorsmartsortMQTT.events.UIUpdater;
 
@@ -753,7 +741,7 @@ public class PurolatorActivityGlass extends Activity {
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
         //first find & remove the scanned barcode from the list
 
-        if (D) Log.i(TAG, "In updateBottom for PINCode: " + event.getScannedCode());
+        if (D) Log.i(TAG, "In updateBottom for ScanCode: " + event.getScannedCode());
 
         if (event.getScannedCode() == null){
             dateView.setText("");
@@ -771,7 +759,11 @@ public class PurolatorActivityGlass extends Activity {
         if (event.getScannedCode().startsWith("SHELF")){
 
 
-            dateView.setText(getResources().getString(R.string.packagedrop)+" ");
+            String message = getResources().getString(R.string.packagedrop) +" ";
+            String street = event.getPostalCode()+ " "+ event.getStreetname() + " " + event.getStreetnumber();
+            message = message.replace("%1",street);
+
+            dateView.setText("");
             pinView.setText(event.getErrorMessage());           //contains shelf scan information
             pudroView.setText("");
             sideView.setText("");
@@ -779,24 +771,21 @@ public class PurolatorActivityGlass extends Activity {
             shelfView.setText("");
             sequenceView.setText("");
 //            scannedLabels.remove(PurolatorSmartsortMQTT.getsInstance().getPackageInShelf());
-            if (event.isCorrectBay()) {
+            if (PurolatorSmartsortMQTT.getsInstance().isRouteValid(event.getRouteNumber())){
 
                 PurolatorSmartsortMQTT.getsInstance().setPackageInShelf(null);
                 labelLayout.setBackgroundColor(getResources().getColor(android.R.color.holo_orange_light));
-
             } else {
                 //change background color
                 labelLayout.setBackgroundColor(getResources().getColor(android.R.color.holo_red_dark));
-
             }
 
-
-            //TODO check if all address information is available
             // if not popup the screen to complete the adress information
             if ((labels4Shelf.get(0).getStreetnumber() ==  null || labels4Shelf.get(0).getStreetnumber().isEmpty()) || (labels4Shelf.get(0).getStreetname() == null || labels4Shelf.get(0).getStreetname().isEmpty() || labels4Shelf.get(0).getStreetnumber().equals("0"))) {
                 String pinCode = Utilities.getPINCode(labels4Shelf.get(0).getScannedCode());
                 makePopup(pinCode, labels4Shelf.get(0).getPostalCode(), true);
             } else {
+                dateView.setText(message);
 
                 Logger manifestLog = new Logger();
 
@@ -844,7 +833,7 @@ public class PurolatorActivityGlass extends Activity {
             routeView.setText("REM");
             shelfView.setText("");
             sequenceView.setText("");
-            if (!event.isCorrectBay()){
+            if (PurolatorSmartsortMQTT.getsInstance().isRouteValid(event.getRouteNumber())){
                 //change background color
                 labelLayout.setBackgroundColor(getResources().getColor(android.R.color.holo_red_dark));
             } else {
@@ -855,8 +844,6 @@ public class PurolatorActivityGlass extends Activity {
             return;
 
         }
-
-
 
         String barcodeType = Utilities.getBarcodeLogType(event.getScannedCode());
         String barcodeResult;
@@ -885,6 +872,67 @@ public class PurolatorActivityGlass extends Activity {
                     routeView.setText(label.getRouteNumber());
                     shelfView.setText(label.getShelfNumber());
                     sequenceView.setText(label.getDeliverySequence());
+
+
+                    //if barcode type of the scanned package by the operator = 2D, update the label information
+                    barcodeType = Utilities.getBarcodeLogType(event.getScannedCode());
+
+                    if (barcodeType.equals("2D")){
+                        String barcode = event.getScannedCode();
+                        //check if there is a \ and replace by |
+                        barcode = barcode.replace("\\","|");
+
+                        String parsed[] = barcode.split("[|]");
+                        for (String aParsed : parsed) {
+                            String[] valuePair = aParsed.split("[~]");
+
+                            if (valuePair.length >= 2) {
+
+
+                                switch (valuePair[0].toUpperCase()) {
+                                    case "RO1":
+                                        label.setAddressee(valuePair[1]);
+                                        break;
+                                    case "R03":             //street n#
+                                        label.setStreetnumber(valuePair[1]);
+                                        break;
+                                    case "R04":             //address
+                                        String parsedAddress[] = Utilities.parseAddress(valuePair[1]);
+                                        label.setStreetname(parsedAddress[1]);
+                                        label.setStreetunit(parsedAddress[2]);
+
+                                        break;
+                                    case "R05":             //address
+
+                                        break;
+                                    case "R06":             //municipality
+                                        label.setMunicipality(valuePair[1]);
+                                        break;
+                                    case "R07":             //postal code
+                                        label.setPostalCode(valuePair[1]);
+                                        break;
+                                    case "S04":
+//                                        logger.setDeliveryTime(valuePair[1]);
+                                        break;
+                                    case "S05":
+//                                        logger.setShipmentType(valuePair[1]);
+                                        break;
+                                    case "S06":
+//                                        logger.setDeliveryType(valuePair[1]);
+                                        break;
+                                    case "S07":
+//                                        logger.setDiversionCode(valuePair[1]);
+                                        break;
+                                    case "S15":
+//                                        logger.setHandlingClassType(valuePair[1]);
+                                        break;
+                                }
+                            }
+                        }
+
+                    }
+
+
 
 
                     //package is scanned to put into shelf, remove from upper list, but store it
@@ -919,7 +967,7 @@ public class PurolatorActivityGlass extends Activity {
 
             }
         } else {//show scanned label not in correct bay
-            if (D) Log.i(TAG,"In incorrect bay");
+            if (D) Log.i(TAG,"In incorrect bay scan");
             dateView.setText("D: " + sdf.format(new Date()));
             pinView.setText(event.getPinCode());
             pudroView.setText(event.getPrimarySort());
@@ -942,8 +990,40 @@ public class PurolatorActivityGlass extends Activity {
                         });
                     }
                 }, 1, TimeUnit.SECONDS);
-                //
+                // make label ready to put on shelf
+                if (event.getRouteNumber().equals("REM") ||event.getRouteNumber().equals("XXX") || event.getRouteNumber().equals("MIS")){
+                        makePopup(Utilities.getPINCode(event.getScannedCode()), event.getScannedCode(),false);
 
+                } else {
+                    Label slabel = new Label();
+                    slabel.setDeliverySequence(event.getDeliverySequence());
+                    slabel.setPinCode(event.getPinCode());
+                    slabel.setPrimarySort(event.getPrimarySort());
+                    slabel.setRouteNumber(event.getRouteNumber());
+
+                    slabel.setScanTime(event.getScanDate());
+                    if (event.getShelfNumber() != null) {
+                        slabel.setShelfNumber(event.getShelfNumber());
+                    } else {
+                        slabel.setShelfNumber("");
+                    }
+                    slabel.setSideofBelt(event.getSideofBelt());
+                    slabel.setScannedCode(event.getScannedCode());
+                    slabel.setPostalCode(event.getPostalCode());
+                    slabel.setAddressee(event.getAddressee());
+                    slabel.setStreetname(event.getStreetname());
+                    slabel.setStreetnumber(event.getStreetnumber());
+                    slabel.setStreetunit(event.getStreetunit());
+                    slabel.setMunicipality(event.getMunicipality());
+
+                    //package is scanned to put into shelf, remove from upper list, but store it
+                    //in a separate list till package is dropped on the shelf
+                    labels4Shelf.clear();       //only in label allowed due to change in logic
+                    labels4Shelf.add(slabel);
+
+                    //make package ready to put into a shelf
+                    PurolatorSmartsortMQTT.getsInstance().setPackageInShelf(slabel);
+                }
             } else {
                 labelLayout.setBackgroundColor(getResources().getColor(android.R.color.holo_red_dark));
             }
@@ -1269,8 +1349,14 @@ public class PurolatorActivityGlass extends Activity {
 
                             rpmEdit = new RPMLookUp();
                             rpmEdit.setRouteNumber(rpmLookUps.get(0).getRouteNumber());
+                            mMisBtn.setVisibility(View.INVISIBLE);
 
 
+                        }
+                        if (streetAdapter.getCount() == 0){
+                            if (streetAdapter.getCount() == 0) {
+                                mMisBtn.setVisibility(View.VISIBLE);
+                            }
                         }
                     }
                 });
@@ -1463,6 +1549,8 @@ public class PurolatorActivityGlass extends Activity {
                         } else if (!streetAdapter.isEmpty()) {
                             streetAdapter.clear();
                             mOkBtn.setEnabled(false);
+                            mMisBtn.setVisibility(View.INVISIBLE);
+
 
                             postalCodeEntry.setEnabled(false);
                             postalCodeEntry.setText("");
@@ -1495,11 +1583,9 @@ public class PurolatorActivityGlass extends Activity {
                     @Override
                     public void onClick(View v) {
                         Toast.makeText(PurolatorActivityGlass.this,"Printing Misdirect Label",Toast.LENGTH_LONG).show();
-                        String barcode = null;
                         //delete from the toplist
                         for (Label label : labels) {
-                            if (label.getPinCode() != null && label.getPinCode().equalsIgnoreCase(pinCode)) {
-                                barcode = label.getScannedCode();
+                            if (label.getScannedCode() != null && label.getScannedCode().equalsIgnoreCase(barcode)) {
                                 GlassMessage glassMessage = new GlassMessage();
                                 glassMessage.setMessage("MISMESSAGE");
                                 glassMessage.setBarcode(barcode);
@@ -1549,6 +1635,8 @@ public class PurolatorActivityGlass extends Activity {
                                 break;
                             }
                         }
+
+                        rpmEdit.setPinCode(barcode);            //the scanned barcode;
                         //
                         if (!shelfScan) {
                             makeOCRMessage(rpmEdit, barcode);
@@ -1662,7 +1750,6 @@ public class PurolatorActivityGlass extends Activity {
 
 
                 ArrayList<String> streetInfos = new ArrayList<String>();
-                boolean uniqueStreet = false;
                 for (RPMLookUp rpmLookUp:lRpmLookUps){
                     String streetInfo = new String();
 
@@ -1676,7 +1763,6 @@ public class PurolatorActivityGlass extends Activity {
                         if (!rpmLookUp.getToUnitNumber().equals(rpmLookUp.getFromUnitNumber()))
                             streetInfo = streetInfo + "-" + rpmLookUp.getToUnitNumber();
                     }
-                    uniqueStreet =  rpmLookUp.isUniqueStreet();
 
                     streetInfos.add(streetInfo.trim());
                 }
@@ -1684,11 +1770,9 @@ public class PurolatorActivityGlass extends Activity {
                 if (!streetInfos.isEmpty()) {
                     streetAdapter.addAll(streetInfos);
                     streetAdapter.notifyDataSetChanged();
-                    mMisBtn.setVisibility(View.INVISIBLE);
 
-                } else {
-                    mMisBtn.setVisibility(View.VISIBLE);
                 }
+
 
 
             }
@@ -1729,6 +1813,18 @@ public class PurolatorActivityGlass extends Activity {
             glassMessage.setFixedTarget(Utilities.makeTargetName("FIXED", "FIXED"));
             glassMessage.setGlassName(PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceName());
             EventBus.getDefault().post(glassMessage);
+            //also, store in local database for later retrieval (with LookupFixedBarcodeADDR)
+            PurolatorSmartsortMQTT.getsInstance().updatePSTStreets(message);
+            // now send a new glass message event with the RPMLookup Message so that it is updated on the databases of the other devices
+            glassMessage = new GlassMessage();
+            glassMessage.setBarcode(barcode);
+            glassMessage.setFixedTarget("BROADCAST");
+            glassMessage.setGlassName(PurolatorSmartsortMQTT.getsInstance().getConfigData().getDeviceName());
+            Gson gson = new Gson();
+            glassMessage.setMessage(gson.toJson(message));
+
+            EventBus.getDefault().post(glassMessage);
+
         }
     }
 
@@ -1751,8 +1847,11 @@ public class PurolatorActivityGlass extends Activity {
     }
 
 
-
-    //send an email with all the logcat Entries
+    /**
+     * send an email with all the logcat Entries
+     *
+     *
+     */
 
     public void sendLogcatMail() {
 

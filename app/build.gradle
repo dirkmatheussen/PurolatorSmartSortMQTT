@@ -8,8 +8,8 @@ android {
         applicationId "evolar.be.purolatorsmartsortMQTT"
         minSdkVersion 21
         targetSdkVersion 23
-        versionCode 401
-        versionName "4.1"
+        versionCode 403
+        versionName "4.3"
     }
     buildTypes {
         release {

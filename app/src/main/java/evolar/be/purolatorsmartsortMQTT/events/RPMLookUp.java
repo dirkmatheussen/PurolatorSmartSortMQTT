@@ -1,4 +1,4 @@
-package evolar.be.purolatorsmartsortMQTT;
+package evolar.be.purolatorsmartsortMQTT.events;
 
 /**
  * Pojo Object to store street information for a postalcode or for a street
@@ -8,6 +8,7 @@ package evolar.be.purolatorsmartsortMQTT;
 
 public class RPMLookUp {
 
+    private String pinCode;                 //the scanned barcode
     private String postalCode;
     private String streetName;
     private String streetType;
@@ -25,6 +26,14 @@ public class RPMLookUp {
     public RPMLookUp(){
 
 
+    }
+
+    public String getPinCode() {
+        return pinCode;
+    }
+
+    public void setPinCode(String pinCode) {
+        this.pinCode = pinCode;
     }
 
     public String getPostalCode() {
